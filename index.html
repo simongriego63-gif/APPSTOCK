@@ -103,8 +103,16 @@
             </div>
         </div>
     </div>
+    <div id="productos-screen" class="hidden max-w-md mx-auto">
+    <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-black text-slate-800 tracking-tight">Administrar Productos</h2>
+        <button onclick="verProductos()" class="text-blue-500 text-sm font-bold"><i class="fas fa-sync"></i> ACTUALIZAR</button>
+    </div>
+    <div id="lista-prods" class="grid gap-3"></div>
+    <div onclick="nuevoProdPrompt()" class="fab shadow-xl active:scale-90 transition-all"><i class="fas fa-plus"></i></div>
+</div>
 <script>
-    // 1. Configuración de la API y Tablas
     const API = {
         id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2",
         key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
@@ -114,10 +122,11 @@
 
     let tipoSel = "Entrada";
 
-    // 2. Función Maestra de Conexión (con Proxy para evitar errores de red)
     async function callAppSheet(tableName, action, rows = []) {
+        // Agregamos un número aleatorio al final de la URL para evitar el caché de AppSheet/Proxy
+        const cacheBuster = `&cb=${Date.now()}`;
         const baseUrl = `https://api.appsheet.com/api/v2/apps/${API.id}/tables/${tableName}/Action`;
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(baseUrl + cacheBuster)}`;
         
         const response = await fetch(proxyUrl, {
             method: 'POST',
@@ -136,7 +145,6 @@
         return await response.json();
     }
 
-    // 3. Navegación y Control de Interfaz
     function showPage(p) {
         document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
         document.getElementById(p + '-screen').classList.remove('hidden');
@@ -148,84 +156,12 @@
         document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
     }
 
-    // --- FUNCIONES DEL MODAL PROLIJO ---
-    function nuevoProdPrompt() {
-        document.getElementById('modal-producto').classList.remove('hidden');
-    }
-
-    function cerrarModal() {
-        document.getElementById('modal-producto').classList.add('hidden');
-    }
-
-    // --- CREAR PRODUCTO CON STOCK INICIAL ---
-    async function confirmarNuevoProducto() {
-        const nombre = document.getElementById('new-prod-nombre').value;
-        const inicial = parseInt(document.getElementById('new-prod-inicial').value) || 0;
-        const minimo = parseInt(document.getElementById('new-prod-min').value) || 0;
-
-        if (!nombre) return alert("El nombre es obligatorio");
-
-        const btn = document.querySelector('#modal-producto button:last-child');
-        btn.disabled = true;
-        btn.innerText = "CREANDO...";
-
-        try {
-            // 1. Crear en tabla PRODUCTOS
-            const res = await callAppSheet(API.prod, "Add", [{ 
-                "NOMBRE": nombre, 
-                "STOCK INICIAL": inicial, 
-                "STOCK MINIMO": minimo 
-            }]);
-            
-            // 2. Registrar movimiento inicial en MOVIMIENTOS
-            if (res && res.length > 0 && inicial > 0) {
-                const newId = res[0].ID_PRODUCTO;
-                await callAppSheet(API.mov, "Add", [{
-                    "PRODUCTO": newId,
-                    "CANTIDAD": inicial,
-                    "TIPO": "Entrada",
-                    "FECHA": new Date().toLocaleString('es-AR')
-                }]);
-            }
-            
-            alert("¡Producto creado!");
-            // Limpiar y cerrar
-            document.getElementById('new-prod-nombre').value = "";
-            document.getElementById('new-prod-inicial').value = "";
-            document.getElementById('new-prod-min').value = "";
-            cerrarModal();
-            
-            // Refrescar lista
-            verProductos(); 
-        } catch (e) {
-            alert("Error al crear. Intentá de nuevo.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "CREAR";
-        }
-    }
-
-    // --- CARGA DE SELECTOR ---
-    async function abrirCarga() {
-        showPage('movimientos');
-        const sel = document.getElementById('selectProd');
-        sel.innerHTML = '<option>Cargando productos...</option>';
-        try {
-            const data = await callAppSheet(API.prod, "Find");
-            sel.innerHTML = data.map(p => `<option value="${p.ID_PRODUCTO}">${p.NOMBRE}</option>`).join('');
-        } catch (e) { sel.innerHTML = '<option>Error</option>'; }
-    }
-
-    // --- VER PRODUCTOS CON STOCK ACTUAL CALCULADO ---
     async function verProductos() {
         showPage('productos');
         const cont = document.getElementById('lista-prods');
-        cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Actualizando inventario...</p>';
+        cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Sincronizando con AppSheet...</p>';
         
         try {
-            // Delay para asegurar que AppSheet procesó el nuevo registro
-            await new Promise(r => setTimeout(r, 600));
-
             const [prods, movs] = await Promise.all([
                 callAppSheet(API.prod, "Find"),
                 callAppSheet(API.mov, "Find")
@@ -233,7 +169,6 @@
 
             const stockMap = {};
             prods.forEach(p => stockMap[p.ID_PRODUCTO] = 0);
-            
             movs.forEach(m => {
                 const cant = parseInt(m.CANTIDAD) || 0;
                 if (m.TIPO === 'Entrada') stockMap[m.PRODUCTO] += cant;
@@ -246,58 +181,36 @@
                 const bajoStock = stock <= min;
                 return `
                 <div class="bg-white p-5 rounded-2xl border ${bajoStock ? 'border-red-200 bg-red-50' : 'border-slate-100'} shadow-sm flex justify-between items-center">
-                    <div>
+                    <div class="flex-1">
                         <p class="font-bold text-slate-700">${p.NOMBRE}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Mín: ${min}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Stock: ${stock} | Mín: ${min}</p>
                     </div>
-                    <div class="text-right">
-                        <p class="font-black ${bajoStock ? 'text-red-600' : 'text-emerald-500'} text-xl">${stock}</p>
-                        ${bajoStock ? '<span class="text-[9px] font-bold text-red-500 animate-pulse">RECOMPRAR</span>' : ''}
-                    </div>
+                    <button onclick="borrarProducto('${p.ID_PRODUCTO}', '${p.NOMBRE}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all">
+                        <i class="fas fa-trash-can text-sm"></i>
+                    </button>
                 </div>`;
             }).join('');
-        } catch (e) { cont.innerHTML = '<p>Error de conexión</p>'; }
-    }
-
-    // --- HISTORIAL CON NOMBRES REALES ---
-    async function verHistorial() {
-        showPage('historial');
-        const cont = document.getElementById('lista-hist');
-        cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Cargando...</p>';
-        try {
-            const [prods, movs] = await Promise.all([
-                callAppSheet(API.prod, "Find"),
-                callAppSheet(API.mov, "Find")
-            ]);
-            const nombresMap = {};
-            prods.forEach(p => nombresMap[p.ID_PRODUCTO] = p.NOMBRE);
-
-            cont.innerHTML = movs.reverse().slice(0, 15).map(m => `
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
-                    <div><p class="font-black text-slate-800">${nombresMap[m.PRODUCTO] || 'S/N'}</p><p class="text-[10px] text-slate-400 font-bold uppercase">${m.FECHA || ''}</p></div>
-                    <span class="font-black ${m.TIPO === 'Entrada' ? 'text-emerald-500' : 'text-red-500'} text-lg">${m.TIPO === 'Entrada' ? '+' : '-'}${m.CANTIDAD || 0}</span>
-                </div>`).join('');
-        } catch (e) { cont.innerHTML = '<p>Error</p>'; }
-    }
-
-    // --- GUARDAR MOVIMIENTO ---
-    async function guardarMov() {
-        const btn = document.getElementById('btnSave');
-        const cant = document.getElementById('inputCant').value;
-        if(!cant || cant <= 0) return alert("Cantidad inválida");
-        btn.disabled = true; btn.innerText = "Guardando...";
-        try {
-            await callAppSheet(API.mov, "Add", [{
-                "PRODUCTO": document.getElementById('selectProd').value,
-                "CANTIDAD": parseInt(cant), "TIPO": tipoSel, "FECHA": new Date().toLocaleString('es-AR')
-            }]);
-            alert("¡Guardado!"); location.reload();
         } catch (e) { 
-            alert("Error al guardar"); 
-            btn.disabled = false; 
-            btn.innerText = "CONFIRMAR"; 
+            cont.innerHTML = '<p class="text-center text-red-500">Error al actualizar. Reintentá.</p>'; 
         }
     }
+
+    async function borrarProducto(id, nombre) {
+        if (!confirm(`¿Estás seguro de borrar "${nombre}"? Se eliminará de la lista.`)) return;
+        
+        try {
+            // Acción "Delete" requiere enviar el ID en la fila
+            await callAppSheet(API.prod, "Delete", [{ "ID_PRODUCTO": id }]);
+            alert("Producto eliminado");
+            verProductos();
+        } catch (e) {
+            alert("No se pudo borrar. Verificá la conexión.");
+        }
+    }
+
+    // --- RECUERDA MANTENER TUS OTRAS FUNCIONES (confirmarNuevoProducto, guardarMov, etc) ---
+    // Asegúrate de que callAppSheet use el nuevo código con 'cacheBuster' para solucionar 
+    // lo de que no se ven los cambios de AppSheet.
 </script>
 </body>
 </html>
