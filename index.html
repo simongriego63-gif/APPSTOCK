@@ -83,11 +83,11 @@
 
     <script>
 const API = {
-            id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2"/
-            key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
-            mov: "MOVIMIENTOS",
-            prod: "PRODUCTOS"
-        };
+    id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2", // Cambié / por ,
+    key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
+    mov: "MOVIMIENTOS",
+    prod: "PRODUCTOS"
+};
         let tipoSel = "Entrada";
 
         function showPage(p) {
@@ -121,7 +121,7 @@ const API = {
             cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Consultando inventario...</p>';
             const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.prod}/Action`, {
                 method: 'POST', headers: { 'ApplicationAccessKey': API.key },
-                body: JSON.stringify({ "Action": "FindAll", "Rows": [] })
+                body: JSON.stringify({ "Action": "Find", "Rows": [] })
             });
             const data = await res.json();
             cont.innerHTML = data.map(p => `<div class="bg-white p-5 rounded-2xl border border-slate-100 font-bold text-slate-700 shadow-sm flex justify-between items-center">${p.PRODUCTO || p.NOMBRES}<i class="fas fa-box text-slate-200 text-sm"></i></div>`).join('');
