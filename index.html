@@ -3,90 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock App - Simon Valenti</title>
+    <title>Stock Control - Simon Valenti</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .card-action { background: white; border-radius: 20px; transition: all 0.2s; border: 1px solid #e2e8f0; cursor: pointer; }
-        .card-action:active { transform: scale(0.96); background: #f1f5f9; }
+        body { background-color: #f3f7f9; font-family: 'Inter', sans-serif; }
+        .card-action { background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); transition: all 0.2s; cursor: pointer; border: 1px solid #f1f5f9; }
+        .card-action:active { transform: scale(0.97); background: #f8fafc; }
         .hidden { display: none; }
-        .btn-tipo { border: 2px solid #e2e8f0; transition: all 0.2s; width: 100%; }
+        .btn-tipo { border: 2px solid #e2e8f0; transition: all 0.2s; width: 100%; font-weight: 800; }
         .active-entrada { border-color: #10b981; background-color: #ecfdf5; color: #059669; }
         .active-salida { border-color: #ef4444; background-color: #fef2f2; color: #dc2626; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #0f172a; color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; shadow: 0 10px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body class="p-5">
+<body class="p-6">
 
     <div id="home-screen" class="max-w-md mx-auto">
-        <header class="mb-8 pt-4">
-            <h1 class="text-3xl font-black text-slate-900">Stock App</h1>
-            <p class="text-slate-500">Gestor de Inventario</p>
+        <header class="mb-10 mt-4">
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Stock App</h1>
+            <p class="text-slate-400 font-medium">Gestión de Inventario</p>
         </header>
 
         <div class="grid gap-4">
-            <div onclick="abrirCarga()" class="card-action p-6 flex items-center gap-4">
-                <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-slate-800">Cargar Movimiento</h3>
-                    <p class="text-xs text-slate-400">Entradas y salidas</p>
-                </div>
+            <div onclick="abrirCarga()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-emerald-500">
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-plus-minus"></i></div>
+                <div><h3 class="font-bold text-slate-700">Registrar Movimiento</h3><p class="text-xs text-slate-400">Entradas y salidas</p></div>
             </div>
 
-            <div onclick="verHistorial()" class="card-action p-6 flex items-center gap-4">
-                <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-200">
-                    <i class="fas fa-history"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-slate-800">Historial</h3>
-                    <p class="text-xs text-slate-400">Últimos registros</p>
-                </div>
+            <div onclick="verProductos()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-blue-500">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-boxes-stacked"></i></div>
+                <div><h3 class="font-bold text-slate-700">Productos</h3><p class="text-xs text-slate-400">Ver y administrar ítems</p></div>
+            </div>
+
+            <div onclick="verHistorial()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-slate-800">
+                <div class="w-12 h-12 bg-slate-50 text-slate-800 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-history"></i></div>
+                <div><h3 class="font-bold text-slate-700">Historial</h3><p class="text-xs text-slate-400">Últimos registros</p></div>
             </div>
         </div>
     </div>
 
     <div id="movimientos-screen" class="hidden max-w-md mx-auto">
-        <button onclick="showPage('home')" class="mb-6 text-slate-400 flex items-center gap-2"><i class="fas fa-chevron-left"></i> Volver</button>
-        
-        <div class="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
-            <h2 class="text-xl font-bold text-slate-800 mb-6">Nuevo Movimiento</h2>
-            
+        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+        <div class="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
+            <h2 class="text-xl font-black text-slate-800 mb-6">Nuevo Registro</h2>
             <div class="space-y-6">
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipo de Movimiento</label>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
                     <div class="grid grid-cols-2 gap-3 mt-2">
-                        <button id="btn-ent" onclick="setTipo('Entrada')" class="btn-tipo p-4 rounded-xl font-bold text-slate-400 bg-slate-50">Entrada</button>
-                        <button id="btn-sal" onclick="setTipo('Salida')" class="btn-tipo p-4 rounded-xl font-bold text-slate-400 bg-slate-50">Salida</button>
+                        <button id="btn-ent" onclick="setTipo('Entrada')" class="btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50">ENTRADA</button>
+                        <button id="btn-sal" onclick="setTipo('Salida')" class="btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50">SALIDA</button>
                     </div>
                 </div>
-
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Seleccionar Producto</label>
-                    <select id="selectProducto" class="w-full p-4 bg-slate-50 rounded-xl border-none outline-none mt-2 font-medium">
-                        <option value="">Cargando lista...</option>
-                    </select>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Producto</label>
+                    <select id="selectProd" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-2 border-none appearance-none"></select>
                 </div>
-
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cantidad</label>
-                    <input type="number" id="inputCant" placeholder="0" class="w-full p-4 bg-slate-50 rounded-xl border-none outline-none mt-2 font-mono">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cantidad</label>
+                    <input type="number" id="inputCant" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-slate-700 mt-2 text-xl">
                 </div>
-
-                <button onclick="guardar()" id="btnSave" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl active:bg-black transition-all">
-                    Confirmar Registro
-                </button>
+                <button onclick="guardarMov()" id="btnSave" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl active:bg-black transition-all">CONFIRMAR</button>
             </div>
         </div>
     </div>
 
+    <div id="productos-screen" class="hidden max-w-md mx-auto">
+        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+        <h2 class="text-xl font-black text-slate-800 mb-6 tracking-tight">Administrar Productos</h2>
+        <div id="lista-prods" class="grid gap-3"></div>
+        <div onclick="nuevoProdPrompt()" class="fab shadow-xl active:scale-90 transition-all"><i class="fas fa-plus"></i></div>
+    </div>
+
     <div id="historial-screen" class="hidden max-w-md mx-auto">
-        <button onclick="showPage('home')" class="mb-6 text-slate-400 flex items-center gap-2"><i class="fas fa-chevron-left"></i> Volver</button>
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Movimientos Recientes</h2>
-        <div id="lista-historial" class="space-y-3 text-center text-slate-400 py-10 italic">
-            Cargando historial...
-        </div>
+        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+        <h2 class="text-xl font-black text-slate-800 mb-6 tracking-tight">Historial de Movimientos</h2>
+        <div id="lista-hist" class="grid gap-3"></div>
     </div>
 
     <script>
@@ -97,87 +89,90 @@
             prod: "PRODUCTOS"
         };
 
-        let tipoSel = "";
+        let tipoSel = "Entrada";
 
         function showPage(p) {
-            document.getElementById('home-screen').classList.add('hidden');
-            document.getElementById('movimientos-screen').classList.add('hidden');
-            document.getElementById('historial-screen').classList.add('hidden');
+            document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
             document.getElementById(p + '-screen').classList.remove('hidden');
         }
 
         function setTipo(t) {
             tipoSel = t;
-            document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-xl font-bold active-entrada" : "btn-tipo p-4 rounded-xl font-bold text-slate-400 bg-slate-50";
-            document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-xl font-bold active-salida" : "btn-tipo p-4 rounded-xl font-bold text-slate-400 bg-slate-50";
+            document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-2xl active-entrada" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
+            document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
         }
 
         async function abrirCarga() {
             showPage('movimientos');
-            const select = document.getElementById('selectProducto');
-            try {
-                const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.prod}/Action`, {
-                    method: 'POST',
-                    headers: { 'ApplicationAccessKey': API.key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "Action": "Find", "Properties": {}, "Rows": [] })
-                });
-                const data = await res.json();
-                select.innerHTML = '<option value="">Elegí un producto</option>';
-                data.forEach(item => {
-                    // Busca el nombre en cualquier columna que pueda tenerlo
-                    const nombre = item.PRODUCTO || item.NOMBRES || item.Nombre || "Sin nombre";
-                    select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
-                });
-            } catch (e) { select.innerHTML = '<option>Error al conectar</option>'; }
+            setTipo('Entrada');
+            const sel = document.getElementById('selectProd');
+            sel.innerHTML = '<option>Cargando...</option>';
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.prod}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API.key },
+                body: JSON.stringify({ "Action": "Find", "Rows": [] })
+            });
+            const data = await res.json();
+            // Mapea PRODUCTO o NOMBRES para que encaje con tu tabla
+            sel.innerHTML = data.map(p => `<option value="${p.PRODUCTO || p.NOMBRES}">${p.PRODUCTO || p.NOMBRES}</option>`).join('');
+        }
+
+        async function verProductos() {
+            showPage('productos');
+            const cont = document.getElementById('lista-prods');
+            cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Consultando inventario...</p>';
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.prod}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API.key },
+                body: JSON.stringify({ "Action": "Find", "Rows": [] })
+            });
+            const data = await res.json();
+            cont.innerHTML = data.map(p => `<div class="bg-white p-5 rounded-2xl border border-slate-100 font-bold text-slate-700 shadow-sm flex justify-between items-center">${p.PRODUCTO || p.NOMBRES}<i class="fas fa-box text-slate-200 text-sm"></i></div>`).join('');
         }
 
         async function verHistorial() {
             showPage('historial');
-            const lista = document.getElementById('lista-historial');
-            try {
-                const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.mov}/Action`, {
-                    method: 'POST',
-                    headers: { 'ApplicationAccessKey': API.key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "Action": "Find", "Properties": {}, "Rows": [] })
-                });
-                const data = await res.json();
-                lista.innerHTML = data.length ? "" : "No hay movimientos.";
-                data.reverse().slice(0, 10).forEach(m => {
-                    const esEntrada = m.TIPO === 'Entrada';
-                    lista.innerHTML += `
-                        <div class="bg-white p-4 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm">
-                            <div class="text-left">
-                                <p class="font-bold text-slate-800">${m.PRODUCTO || '---'}</p>
-                                <p class="text-[10px] text-slate-400 uppercase font-bold">${m.FECHA || ''}</p>
-                            </div>
-                            <span class="font-black ${esEntrada ? 'text-emerald-500' : 'text-red-500'}">
-                                ${esEntrada ? '+' : '-'}${m.CANTIDAD}
-                            </span>
-                        </div>`;
-                });
-            } catch (e) { lista.innerHTML = "Error al cargar."; }
+            const cont = document.getElementById('lista-hist');
+            cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Buscando registros...</p>';
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.mov}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API.key },
+                body: JSON.stringify({ "Action": "Find", "Rows": [] })
+            });
+            const data = await res.json();
+            cont.innerHTML = data.reverse().slice(0, 15).map(m => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+                    <div><p class="font-black text-slate-800">${m.PRODUCTO}</p><p class="text-[10px] text-slate-400 font-bold uppercase">${m.FECHA}</p></div>
+                    <span class="font-black ${m.TIPO === 'Entrada' ? 'text-emerald-500' : 'text-red-500'} text-lg">${m.TIPO === 'Entrada' ? '+' : '-'}${m.CANTIDAD}</span>
+                </div>`).join('');
         }
 
-        async function guardar() {
+        function nuevoProdPrompt() {
+            const n = prompt("Nombre del nuevo producto:");
+            if(n) crearProducto(n);
+        }
+
+        async function crearProducto(nombre) {
+            await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.prod}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API.key },
+                body: JSON.stringify({ "Action": "Add", "Rows": [{ "PRODUCTO": nombre, "NOMBRES": nombre }] })
+            });
+            verProductos();
+        }
+
+        async function guardarMov() {
             const btn = document.getElementById('btnSave');
-            const p = document.getElementById('selectProducto').value;
-            const c = document.getElementById('inputCant').value;
-            if(!p || !c || !tipoSel) return alert("Completa todo, Simon.");
-
-            btn.disabled = true; btn.innerText = "Guardando...";
-
-            try {
-                await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.mov}/Action`, {
-                    method: 'POST',
-                    headers: { 'ApplicationAccessKey': API.key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        "Action": "Add", "Properties": { "Locale": "es-AR" },
-                        "Rows": [{ "PRODUCTO": p, "CANTIDAD": parseInt(c), "TIPO": tipoSel, "FECHA": new Date().toLocaleString() }]
-                    })
-                });
-                alert("¡Guardado con éxito!");
-                location.reload();
-            } catch (e) { alert("Error al guardar."); btn.disabled = false; btn.innerText = "Confirmar Registro"; }
+            btn.disabled = true; btn.innerText = "Sincronizando...";
+            await fetch(`https://api.appsheet.com/api/v2/apps/${API.id}/tables/${API.mov}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API.key },
+                body: JSON.stringify({
+                    "Action": "Add",
+                    "Rows": [{
+                        "PRODUCTO": document.getElementById('selectProd').value,
+                        "CANTIDAD": parseInt(document.getElementById('inputCant').value),
+                        "TIPO": tipoSel,
+                        "FECHA": new Date().toLocaleString()
+                    }]
+                })
+            });
+            alert("¡Guardado!"); location.reload();
         }
     </script>
 </body>
