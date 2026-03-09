@@ -185,31 +185,32 @@
         function nuevoProdPrompt() { document.getElementById('modal-producto').classList.remove('hidden'); }
         function cerrarModal() { document.getElementById('modal-producto').classList.add('hidden'); }
 
-    // --- CONEXIÓN A LA API (Proxy Ilimitado para GitHub) ---
+     // --- CONEXIÓN AL BACKEND PROPIO (Chau Proxies) ---
+       // --- CONEXIÓN AL BACKEND (Optimizada para velocidad) ---
         async function callAppSheet(tableName, action, rows = []) {
-            const urlBase = 'https://api.appsheet.com/api/v2/apps/' + API.id + '/tables/' + tableName + '/Action';
-            
-            // Como ya tenés un link real en GitHub, usamos el proxy libre de límites
-            const url = 'https://corsproxy.org/?' + encodeURIComponent(urlBase);
+            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec'; // ¡Pega tu link acá!
             
             try {
-                const response = await fetch(url, {
+                // TRUCO DE VELOCIDAD: Al quitarle el 'headers: Content-Type', 
+                // evitamos que el navegador haga la lenta "doble verificación" de seguridad (CORS Preflight).
+                const response = await fetch(urlBackend, {
                     method: 'POST',
-                    headers: { 
-                        'ApplicationAccessKey': API.key, 
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ "Action": action, "Properties": { "Locale": "es-AR", "Timezone": "America/Argentina/Buenos_Aires" }, "Rows": rows })
+                    body: JSON.stringify({
+                        tableName: tableName,
+                        payload: { 
+                            "Action": action, 
+                            "Properties": { "Locale": "es-AR", "Timezone": "America/Argentina/Buenos_Aires" }, 
+                            "Rows": rows 
+                        }
+                    })
                 });
                 
-                if (!response.ok) {
-                    const textoError = await response.text();
-                    throw new Error("Rechazado: " + textoError);
-                }
-                return await response.json();
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
                 
             } catch (error) {
-                throw new Error("Error de conexión: " + error.message);
+                throw new Error("Error del Servidor: " + error.message);
             }
         }
 
@@ -218,6 +219,7 @@
             return fila["Row ID"] || fila.ID_PRODUCTO;
         }
 
+ 
         // --- LÓGICA DE LA APP ---
        // 1. EL TRADUCTOR DE FECHAS (Ahora respeta el Día/Mes/Año)
         function fechaArg(fechaStr) {
@@ -303,7 +305,7 @@
         }
 
         // 4. EL CREADOR DE MOVIMIENTOS (Mandando la fecha como le gusta a AppSheet)
-        async function guardarMov() {
+       async function guardarMov() {
             const btn = document.getElementById('btnSave');
             const cantInput = document.getElementById('inputCant');
             const cant = parseInt(cantInput.value);
@@ -324,7 +326,6 @@
             btn.innerText = "GUARDANDO...";
             
             try {
-                // Forzamos la fecha a Día/Mes/Año exactamente
                 const d = new Date();
                 const dia = String(d.getDate()).padStart(2, '0');
                 const mes = String(d.getMonth() + 1).padStart(2, '0');
@@ -334,6 +335,7 @@
                 const segundos = String(d.getSeconds()).padStart(2, '0');
                 const fechaAppSheet = `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
 
+                // 1. Mandamos el dato al servidor blindado
                 await callAppSheet(API.mov, "Add", [{
                     "PRODUCTO": idProd, 
                     "CANTIDAD": cant, 
@@ -342,8 +344,22 @@
                 }]);
                 
                 mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
+                
+                // 2. MAGIA DE VELOCIDAD: En vez de descargar toda la base de datos de nuevo,
+                // sumamos o restamos el stock en la memoria de la pantalla al instante.
+                if (tipoSel === 'Entrada') {
+                    window.stockGlobal[idProd] += cant;
+                } else {
+                    window.stockGlobal[idProd] -= cant;
+                }
+                
+                // Actualizamos el textito del producto seleccionado en tiempo real
+                const opcion = selProd.options[selProd.selectedIndex];
+                const nombreProd = opcion.text.split(' (Disp:')[0];
+                opcion.text = `${nombreProd} (Disp: ${window.stockGlobal[idProd]})`;
+                
+                // Limpiamos la cajita de cantidad para que sigas trabajando rápido
                 cantInput.value = ''; 
-                abrirCarga(); 
                 
             } catch (e) { 
                 mostrarAlerta(e.message, "error"); 
@@ -352,28 +368,27 @@
             btn.disabled = false; 
             btn.innerText = "CONFIRMAR";
         }
-        
-    function borrarProducto(id, nombre) {
-            mostrarConfirmacion(`¿Borrar "${nombre}" y TODO su historial de movimientos?`, async () => {
+   function borrarProducto(id, nombre) {
+            mostrarConfirmacion(`¿Borrar el producto "${nombre}" y todo su historial?`, async () => {
                 try {
-                    // 1. Cambiamos la vista para avisar que estamos limpiando a fondo
-                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Borrando historial...</p></div>';
+                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Limpiando a fondo...</p></div>';
 
-                    // 2. Traemos la lista completa de movimientos
+                    // 1. Traemos todo el historial de movimientos
                     const movs = await callAppSheet(API.mov, "Find");
                     
-                    // 3. Filtramos para quedarnos solo con los que le pertenecen a este producto
+                    // 2. Buscamos TODOS los movimientos que tengan el código raro de este producto
                     const movsDelProducto = movs.filter(m => m.PRODUCTO === id);
                     
-                    // 4. Si encontramos movimientos, armamos un paquete y los borramos todos juntos
+                    // 3. Francotirador: Los borramos usando estrictamente la llave "ID_MOV"
                     if (movsDelProducto.length > 0) {
                         const payloadMovs = movsDelProducto.map(m => {
-                            return { "Row ID": m["Row ID"] }; 
+                            return { "ID_MOV": m.ID_MOV }; // <--- La clave estaba acá
                         });
+                        // Esperamos a que termine de borrar los movimientos
                         await callAppSheet(API.mov, "Delete", payloadMovs);
                     }
 
-                    // 5. Una vez limpio el historial, eliminamos el producto maestro
+                    // 4. Una vez limpio el historial, borramos el producto maestro
                     await callAppSheet(API.prod, "Delete", [{ "Row ID": id }]);
                     
                     mostrarAlerta("Producto y movimientos eliminados", "exito");
