@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Control - Simon Valenti</title>
+    <title>Stock App - Simon Valenti</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #f3f7f9; font-family: 'Inter', sans-serif; }
         .card-action { background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); transition: all 0.2s; cursor: pointer; border: 1px solid #f1f5f9; }
         .card-action:active { transform: scale(0.97); background: #f8fafc; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .btn-tipo { border: 2px solid #e2e8f0; transition: all 0.2s; width: 100%; font-weight: 800; }
         .active-entrada { border-color: #10b981; background-color: #ecfdf5; color: #059669; }
         .active-salida { border-color: #ef4444; background-color: #fef2f2; color: #dc2626; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #0f172a; color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #0f172a; color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 40; box-shadow: 0 10px 20px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s; }
+        .fab:active { transform: scale(0.90); }
     </style>
 </head>
 <body class="p-6">
@@ -24,18 +25,15 @@
             <h1 class="text-3xl font-black text-slate-800 tracking-tight">Stock App</h1>
             <p class="text-slate-400 font-medium">Gestión de Inventario</p>
         </header>
-
         <div class="grid gap-4">
             <div onclick="abrirCarga()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-emerald-500">
                 <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-plus-minus"></i></div>
                 <div><h3 class="font-bold text-slate-700">Registrar Movimiento</h3><p class="text-xs text-slate-400">Entradas y salidas</p></div>
             </div>
-
             <div onclick="verProductos()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-blue-500">
                 <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-boxes-stacked"></i></div>
                 <div><h3 class="font-bold text-slate-700">Productos</h3><p class="text-xs text-slate-400">Ver y administrar ítems</p></div>
             </div>
-
             <div onclick="verHistorial()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-slate-800">
                 <div class="w-12 h-12 bg-slate-50 text-slate-800 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-history"></i></div>
                 <div><h3 class="font-bold text-slate-700">Historial</h3><p class="text-xs text-slate-400">Últimos registros</p></div>
@@ -51,7 +49,7 @@
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
                     <div class="grid grid-cols-2 gap-3 mt-2">
-                        <button id="btn-ent" onclick="setTipo('Entrada')" class="btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50">ENTRADA</button>
+                        <button id="btn-ent" onclick="setTipo('Entrada')" class="btn-tipo p-4 rounded-2xl active-entrada">ENTRADA</button>
                         <button id="btn-sal" onclick="setTipo('Salida')" class="btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50">SALIDA</button>
                     </div>
                 </div>
@@ -70,147 +68,369 @@
 
     <div id="productos-screen" class="hidden max-w-md mx-auto">
         <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
-        <h2 class="text-xl font-black text-slate-800 mb-6 tracking-tight">Administrar Productos</h2>
-        <div id="lista-prods" class="grid gap-3"></div>
-        <div onclick="nuevoProdPrompt()" class="fab shadow-xl active:scale-90 transition-all"><i class="fas fa-plus"></i></div>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight">Inventario</h2>
+            <button onclick="verProductos()" class="text-blue-500 text-xs font-bold active:text-blue-700"><i class="fas fa-sync"></i> ACTUALIZAR</button>
+        </div>
+        <div id="lista-prods" class="grid gap-3 mb-24"></div>
+        <div onclick="nuevoProdPrompt()" class="fab shadow-xl"><i class="fas fa-plus"></i></div>
     </div>
 
     <div id="historial-screen" class="hidden max-w-md mx-auto">
         <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
-        <h2 class="text-xl font-black text-slate-800 mb-6 tracking-tight">Historial de Movimientos</h2>
+        <h2 class="text-xl font-black text-slate-800 mb-6 tracking-tight">Historial</h2>
         <div id="lista-hist" class="grid gap-3"></div>
     </div>
+
     <div id="modal-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
         <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl">
             <h2 class="text-2xl font-black text-slate-800 mb-6">Nuevo Producto</h2>
             <div class="space-y-4">
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
-                    <input type="text" id="new-prod-nombre" placeholder="Ej: Masa de Pizza" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="text" id="new-prod-nombre" placeholder="Ej: Masa Pizza" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Inicial</label>
-                    <input type="number" id="new-prod-inicial" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="number" id="new-prod-inicial" value="0" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Mínimo</label>
-                    <input type="number" id="new-prod-min" placeholder="Ej: 5" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="number" id="new-prod-min" value="5" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div class="flex gap-3 mt-4">
-                    <button onclick="cerrarModal()" class="flex-1 p-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">CANCELAR</button>
-                    <button onclick="confirmarNuevoProducto()" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">CREAR</button>
+                    <button onclick="cerrarModal()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
+                    <button id="btnCrear" onclick="confirmarNuevoProducto()" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-black">CREAR</button>
                 </div>
             </div>
         </div>
     </div>
-    <div id="productos-screen" class="hidden max-w-md mx-auto">
-    <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-black text-slate-800 tracking-tight">Administrar Productos</h2>
-        <button onclick="verProductos()" class="text-blue-500 text-sm font-bold"><i class="fas fa-sync"></i> ACTUALIZAR</button>
+
+    <div id="modal-alerta" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-[60]">
+        <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl text-center">
+            <div id="alerta-icono" class="w-16 h-16 mx-auto bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <h2 id="alerta-titulo" class="text-xl font-black text-slate-800 mb-2">Aviso</h2>
+            <p id="alerta-mensaje" class="text-slate-500 font-medium mb-6 text-sm break-words">Mensaje</p>
+            <div class="flex gap-3" id="alerta-botones"></div>
+        </div>
     </div>
-    <div id="lista-prods" class="grid gap-3"></div>
-    <div onclick="nuevoProdPrompt()" class="fab shadow-xl active:scale-90 transition-all"><i class="fas fa-plus"></i></div>
-</div>
 <script>
-    const API = {
-        id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2",
-        key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
-        mov: "MOVIMIENTOS",
-        prod: "PRODUCTOS"
-    };
+        // --- CREDENCIALES ---
+        const API = {
+            id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2",
+            key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
+            mov: "MOVIMIENTOS",
+            prod: "PRODUCTOS"
+        };
 
-    let tipoSel = "Entrada";
+        let tipoSel = "Entrada";
+        let confirmCallback = null;
 
-    async function callAppSheet(tableName, action, rows = []) {
-        // Agregamos un número aleatorio al final de la URL para evitar el caché de AppSheet/Proxy
-        const cacheBuster = `&cb=${Date.now()}`;
-        const baseUrl = `https://api.appsheet.com/api/v2/apps/${API.id}/tables/${tableName}/Action`;
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(baseUrl + cacheBuster)}`;
-        
-        const response = await fetch(proxyUrl, {
-            method: 'POST',
-            headers: { 
-                'ApplicationAccessKey': API.key,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                "Action": action,
-                "Properties": { "Locale": "es-AR" },
-                "Rows": rows
-            })
-        });
+        // --- SISTEMA DE ALERTAS BONITAS ---
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            document.getElementById('modal-alerta').classList.remove('hidden');
+            document.getElementById('alerta-mensaje').innerText = mensaje;
+            const icono = document.getElementById('alerta-icono');
+            
+            if (tipo === 'error') {
+                icono.className = "w-16 h-16 mx-auto bg-red-50 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4";
+                icono.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                document.getElementById('alerta-titulo').innerText = "Error";
+            } else if (tipo === 'exito') {
+                icono.className = "w-16 h-16 mx-auto bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-3xl mb-4";
+                icono.innerHTML = '<i class="fas fa-check"></i>';
+                document.getElementById('alerta-titulo').innerText = "¡Listo!";
+            } else {
+                icono.className = "w-16 h-16 mx-auto bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4";
+                icono.innerHTML = '<i class="fas fa-info-circle"></i>';
+                document.getElementById('alerta-titulo').innerText = "Aviso";
+            }
+            
+            document.getElementById('alerta-botones').innerHTML = '<button onclick="cerrarAlerta()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-black">ENTENDIDO</button>';
+        }
 
-        if (!response.ok) throw new Error(`Error: ${response.status}`);
-        return await response.json();
-    }
+        function mostrarConfirmacion(mensaje, callback) {
+            document.getElementById('modal-alerta').classList.remove('hidden');
+            document.getElementById('alerta-mensaje').innerText = mensaje;
+            document.getElementById('alerta-titulo').innerText = "¿Estás seguro?";
+            
+            const icono = document.getElementById('alerta-icono');
+            icono.className = "w-16 h-16 mx-auto bg-amber-50 text-amber-500 rounded-full flex items-center justify-center text-3xl mb-4";
+            icono.innerHTML = '<i class="fas fa-question"></i>';
 
-    function showPage(p) {
-        document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
-        document.getElementById(p + '-screen').classList.remove('hidden');
-    }
+            confirmCallback = callback;
+            document.getElementById('alerta-botones').innerHTML = `
+                <button onclick="cerrarAlerta()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
+                <button onclick="ejecutarConfirmacion()" class="flex-1 bg-amber-500 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-amber-600">CONFIRMAR</button>
+            `;
+        }
 
-    function setTipo(t) {
-        tipoSel = t;
-        document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-2xl active-entrada" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
-        document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
-    }
+        function cerrarAlerta() { document.getElementById('modal-alerta').classList.add('hidden'); }
+        function ejecutarConfirmacion() { cerrarAlerta(); if (confirmCallback) confirmCallback(); }
 
-    async function verProductos() {
-        showPage('productos');
-        const cont = document.getElementById('lista-prods');
-        cont.innerHTML = '<p class="text-center py-10 text-slate-400 italic">Sincronizando con AppSheet...</p>';
-        
-        try {
-            const [prods, movs] = await Promise.all([
-                callAppSheet(API.prod, "Find"),
-                callAppSheet(API.mov, "Find")
-            ]);
+        // --- NAVEGACIÓN ---
+        function showPage(p) {
+            document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
+            document.getElementById(p + '-screen').classList.remove('hidden');
+        }
 
-            const stockMap = {};
-            prods.forEach(p => stockMap[p.ID_PRODUCTO] = 0);
-            movs.forEach(m => {
-                const cant = parseInt(m.CANTIDAD) || 0;
-                if (m.TIPO === 'Entrada') stockMap[m.PRODUCTO] += cant;
-                else stockMap[m.PRODUCTO] -= cant;
+        function setTipo(t) {
+            tipoSel = t;
+            document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-2xl active-entrada" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
+            document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
+        }
+
+        function nuevoProdPrompt() { document.getElementById('modal-producto').classList.remove('hidden'); }
+        function cerrarModal() { document.getElementById('modal-producto').classList.add('hidden'); }
+
+        // --- CONEXIÓN BLINDADA CON EL PROXY ---
+        async function callAppSheet(tableName, action, rows = []) {
+            const urlBase = 'https://api.appsheet.com/api/v2/apps/' + API.id + '/tables/' + tableName + '/Action';
+            const url = 'https://cors-anywhere.herokuapp.com/' + urlBase;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'ApplicationAccessKey': API.key, 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest' 
+                    },
+                    body: JSON.stringify({ "Action": action, "Properties": { "Locale": "es-AR" }, "Rows": rows })
+                });
+                
+                if (!response.ok) {
+                    const textoError = await response.text();
+                    throw new Error("Rechazado: " + textoError);
+                }
+                return await response.json();
+                
+            } catch (error) {
+                if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                    throw new Error("Proxy bloqueado. Entrá a cors-anywhere.herokuapp.com/corsdemo y tocá el botón para activar.");
+                }
+                throw error;
+            }
+        }
+
+        // --- HERRAMIENTAS NUEVAS ---
+        function getId(fila) {
+            return fila["Row ID"] || fila.ID_PRODUCTO;
+        }
+
+        function fechaArg(fechaStr) {
+            if (!fechaStr) return '';
+            const f = new Date(fechaStr);
+            if (isNaN(f)) return fechaStr; 
+            
+            // Forzamos el formato estricto Día/Mes/Año
+            const dia = String(f.getDate()).padStart(2, '0');
+            const mes = String(f.getMonth() + 1).padStart(2, '0');
+            const anio = f.getFullYear();
+            const horas = String(f.getHours()).padStart(2, '0');
+            const minutos = String(f.getMinutes()).padStart(2, '0');
+            
+            return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+        }
+        // --- LÓGICA DE LA APP ---
+        async function abrirCarga() {
+            showPage('movimientos');
+            const sel = document.getElementById('selectProd');
+            sel.innerHTML = '<option value="">Cargando base de datos...</option>';
+            try {
+                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
+                
+                window.stockGlobal = {}; 
+                prods.forEach(p => window.stockGlobal[getId(p)] = parseInt(p["STOCK INICIAL"]) || 0);
+                
+                movs.forEach(m => {
+                    const cant = parseInt(m.CANTIDAD) || 0;
+                    if (m.TIPO === 'Entrada') window.stockGlobal[m.PRODUCTO] += cant;
+                    else window.stockGlobal[m.PRODUCTO] -= cant;
+                });
+
+                sel.innerHTML = '<option value="">Seleccionar Producto...</option>' + prods.map(p => {
+                    const idReal = getId(p);
+                    const disp = window.stockGlobal[idReal] || 0;
+                    return `<option value="${idReal}">${p.NOMBRE} (Disp: ${disp})</option>`;
+                }).join('');
+                
+            } catch (e) { 
+                sel.innerHTML = '<option value="">Error de servidor</option>';
+                mostrarAlerta(e.message, "error"); 
+            }
+        }
+
+        async function verProductos() {
+            showPage('productos');
+            const cont = document.getElementById('lista-prods');
+            cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i><p class="text-slate-400 italic">Sincronizando...</p></div>';
+            try {
+                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
+                const stockMap = {};
+                
+                prods.forEach(p => stockMap[getId(p)] = parseInt(p["STOCK INICIAL"]) || 0);
+                movs.forEach(m => {
+                    const cant = parseInt(m.CANTIDAD) || 0;
+                    if (m.TIPO === 'Entrada') stockMap[m.PRODUCTO] += cant;
+                    else stockMap[m.PRODUCTO] -= cant;
+                });
+                
+                if(prods.length === 0) {
+                    cont.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">No hay productos. ¡Creá uno!</p>';
+                    return;
+                }
+
+                cont.innerHTML = prods.map(p => {
+                    const idReal = getId(p);
+                    const stock = stockMap[idReal] || 0;
+                    const min = parseInt(p["STOCK MINIMO"]) || 0;
+                    const bajo = stock <= min;
+                    return `
+                    <div class="bg-white p-5 rounded-2xl border ${bajo ? 'border-red-200 bg-red-50' : 'border-slate-100'} shadow-sm flex justify-between items-center">
+                        <div class="flex-1">
+                            <p class="font-bold text-slate-700">${p.NOMBRE}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Stock: ${stock} | Mín: ${min}</p>
+                        </div>
+                        <button onclick="borrarProducto('${idReal}', '${p.NOMBRE}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-trash-can text-sm"></i></button>
+                    </div>`;
+                }).join('');
+            } catch (e) { 
+                cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Fallo de conexión.</p>';
+                mostrarAlerta(e.message, "error"); 
+            }
+        }
+
+        function borrarProducto(id, nombre) {
+            mostrarConfirmacion(`¿Borrar el producto "${nombre}"?`, async () => {
+                try {
+                    const payload = id ? { "ID_PRODUCTO": id } : { "NOMBRE": nombre };
+                    await callAppSheet(API.prod, "Delete", [payload]);
+                    verProductos(); 
+                } catch (e) { mostrarAlerta(e.message, "error"); }
             });
-
-            cont.innerHTML = prods.map(p => {
-                const stock = stockMap[p.ID_PRODUCTO] || 0;
-                const min = parseInt(p["STOCK MINIMO"]) || 0;
-                const bajoStock = stock <= min;
-                return `
-                <div class="bg-white p-5 rounded-2xl border ${bajoStock ? 'border-red-200 bg-red-50' : 'border-slate-100'} shadow-sm flex justify-between items-center">
-                    <div class="flex-1">
-                        <p class="font-bold text-slate-700">${p.NOMBRE}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Stock: ${stock} | Mín: ${min}</p>
-                    </div>
-                    <button onclick="borrarProducto('${p.ID_PRODUCTO}', '${p.NOMBRE}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all">
-                        <i class="fas fa-trash-can text-sm"></i>
-                    </button>
-                </div>`;
-            }).join('');
-        } catch (e) { 
-            cont.innerHTML = '<p class="text-center text-red-500">Error al actualizar. Reintentá.</p>'; 
         }
-    }
 
-    async function borrarProducto(id, nombre) {
-        if (!confirm(`¿Estás seguro de borrar "${nombre}"? Se eliminará de la lista.`)) return;
-        
-        try {
-            // Acción "Delete" requiere enviar el ID en la fila
-            await callAppSheet(API.prod, "Delete", [{ "ID_PRODUCTO": id }]);
-            alert("Producto eliminado");
-            verProductos();
-        } catch (e) {
-            alert("No se pudo borrar. Verificá la conexión.");
+        async function verHistorial() {
+            showPage('historial');
+            const cont = document.getElementById('lista-hist');
+            cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-slate-800 mb-2"></i><p class="text-slate-400 italic">Cargando...</p></div>';
+            try {
+                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
+                const nombresMap = {};
+                prods.forEach(p => nombresMap[getId(p)] = p.NOMBRE);
+                
+                if(movs.length === 0) {
+                    cont.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">El historial está vacío.</p>';
+                    return;
+                }
+
+                cont.innerHTML = movs.reverse().slice(0, 15).map(m => {
+                    const nombreFinal = nombresMap[m.PRODUCTO] || m.PRODUCTO || 'Producto Eliminado';
+                    return `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+                        <div>
+                            <p class="font-black text-slate-800">${nombreFinal}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">${fechaArg(m.FECHA)}</p>
+                        </div>
+                        <span class="font-black ${m.TIPO === 'Entrada' ? 'text-emerald-500' : 'text-red-500'} text-lg">${m.TIPO === 'Entrada' ? '+' : '-'}${m.CANTIDAD || 0}</span>
+                    </div>`
+                }).join('');
+            } catch (e) { 
+                cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Error al cargar.</p>';
+                mostrarAlerta(e.message, "error");
+            }
         }
-    }
 
-    // --- RECUERDA MANTENER TUS OTRAS FUNCIONES (confirmarNuevoProducto, guardarMov, etc) ---
-    // Asegúrate de que callAppSheet use el nuevo código con 'cacheBuster' para solucionar 
-    // lo de que no se ven los cambios de AppSheet.
-</script>
+        async function guardarMov() {
+            const btn = document.getElementById('btnSave');
+            const cantInput = document.getElementById('inputCant');
+            const cant = parseInt(cantInput.value);
+            const selProd = document.getElementById('selectProd');
+            const idProd = selProd.value; 
+
+            if (!idProd || idProd === "") return mostrarAlerta("Por favor, selecciona un producto válido.", "error");
+            if (!cant || cant <= 0) return mostrarAlerta("Ingresa una cantidad mayor a cero.", "error");
+
+            if (tipoSel === 'Salida') {
+                const stockDisponible = window.stockGlobal ? (window.stockGlobal[idProd] || 0) : 0;
+                if (cant > stockDisponible) {
+                    return mostrarAlerta(`No podés retirar ${cant}. Solo tenés ${stockDisponible} en stock.`, "error");
+                }
+            }
+
+            btn.disabled = true; 
+            btn.innerText = "GUARDANDO...";
+            
+            try {
+                const d = new Date();
+                const fechaAppSheet = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+
+                await callAppSheet(API.mov, "Add", [{
+                    "PRODUCTO": idProd, 
+                    "CANTIDAD": cant, 
+                    "TIPO": tipoSel, 
+                    "FECHA": fechaAppSheet
+                }]);
+                
+                mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
+                cantInput.value = ''; 
+                abrirCarga(); 
+                
+            } catch (e) { 
+                mostrarAlerta(e.message, "error"); 
+            }
+            
+            btn.disabled = false; 
+            btn.innerText = "CONFIRMAR";
+        }
+async function confirmarNuevoProducto() {
+            const nInput = document.getElementById('new-prod-nombre');
+            const iInput = document.getElementById('new-prod-inicial');
+            const mInput = document.getElementById('new-prod-min');
+            
+            const n = nInput.value;
+            const i = parseInt(iInput.value) || 0;
+            const m = parseInt(mInput.value) || 0;
+            
+            if (!n) return mostrarAlerta("El nombre es obligatorio", "error");
+            
+            // ACA ESTA EL BLOQUEO: Frena si es menor a 0
+            if (i < 0) return mostrarAlerta("El stock inicial no puede ser negativo", "error");
+            if (m < 0) return mostrarAlerta("El stock mínimo no puede ser negativo", "error");
+            
+            const btn = document.getElementById('btnCrear');
+            btn.disabled = true; 
+            btn.innerText = "CREANDO...";
+            
+            try {
+                await callAppSheet(API.prod, "Add", [{ 
+                    "NOMBRE": n, 
+                    "STOCK MINIMO": m,
+                    "STOCK INICIAL": i
+                }]);
+                
+                mostrarAlerta("Producto creado correctamente", "exito");
+                cerrarModal();
+                
+                nInput.value = '';
+                iInput.value = '0';
+                mInput.value = '5';
+                
+                if (!document.getElementById('productos-screen').classList.contains('hidden')) {
+                    verProductos();
+                }
+                
+            } catch (e) { 
+                mostrarAlerta(e.message, "error"); 
+            }
+            
+            btn.disabled = false; 
+            btn.innerText = "CREAR";
+        }
+
+    </script>
 </body>
 </html>
