@@ -368,23 +368,47 @@
             btn.disabled = false; 
             btn.innerText = "CONFIRMAR";
         }
-  function borrarProducto(id, nombre) {
-            mostrarConfirmacion(`¿Borrar el producto "${nombre}" y todo su historial?`, async () => {
+ async function borrarProducto(id, nombre) {
+            mostrarConfirmacion(`¿Borrar "${nombre}" y TODO su historial?`, async () => {
                 try {
-                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Borrando producto...</p></div>';
+                    // 1. Pantalla de carga
+                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Limpiando historial completo...</p></div>';
 
-                    // Le mandamos las dos llaves posibles para blindar el borrado
-                    await callAppSheet(API.prod, "Delete", [{ 
-                        "Row ID": id,
-                        "ID_PRODUCTO": id
-                    }]);
-                    
-                    mostrarAlerta("Producto y movimientos eliminados", "exito");
-                    verProductos(); 
-                    
-                } catch (e) { 
-                    mostrarAlerta("Error al borrar: " + e.message, "error"); 
-                    verProductos(); 
+                    // 2. Traemos TODOS los movimientos y TODOS los productos para cruzar datos
+                    const [movs, prods] = await Promise.all([
+                        callAppSheet(API.mov, "Find"),
+                        callAppSheet(API.prod, "Find")
+                    ]);
+
+                    // 3. Buscamos el producto actual en la lista completa para obtener su ID de AppSheet (el largo)
+                    const pFull = prods.find(p => p["Row ID"] === id || p.NOMBRE === nombre);
+                    const idAppSheet = pFull ? pFull.ID_PRODUCTO : null;
+
+                    // 4. LA REDADA: Filtramos movimientos que coincidan con CUALQUIERA de estas 3 cosas:
+                    // - El ID que tenemos en la web (id)
+                    // - El Nombre del producto (nombre)
+                    // - El ID interno de AppSheet (idAppSheet) -> ESTE ES EL QUE MATA AL MOVIMIENTO INICIAL
+                    const aBorrar = movs.filter(m => 
+                        m.PRODUCTO === id || 
+                        m.PRODUCTO === nombre || 
+                        (idAppSheet && m.PRODUCTO === idAppSheet)
+                    );
+
+                    // 5. Borramos los movimientos uno por uno o en lote
+                    if (aBorrar.length > 0) {
+                        const payloadMovs = aBorrar.map(m => ({ "ID_MOV": m.ID_MOV }));
+                        await callAppSheet(API.mov, "Delete", payloadMovs);
+                    }
+
+                    // 6. Finalmente borramos el producto
+                    await callAppSheet(API.prod, "Delete", [{ "Row ID": id, "ID_PRODUCTO": id }]);
+
+                    mostrarAlerta("Producto e historial eliminados", "exito");
+                    verProductos();
+
+                } catch (e) {
+                    mostrarAlerta("Error: " + e.message, "error");
+                    verProductos();
                 }
             });
         }
