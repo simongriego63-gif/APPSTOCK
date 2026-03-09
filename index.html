@@ -88,15 +88,15 @@
             <div class="space-y-4">
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
-                    <input type="text" id="new-prod-nombre" placeholder="Ej: Masa Pizza" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="text" id="new-prod-nombre" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Inicial</label>
-                    <input type="number" id="new-prod-inicial" value="0" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="number" id="new-prod-inicial" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Mínimo</label>
-                    <input type="number" id="new-prod-min" value="5" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <input type="number" id="new-prod-min" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
                 </div>
                 <div class="flex gap-3 mt-4">
                     <button onclick="cerrarModal()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
@@ -368,28 +368,16 @@
             btn.disabled = false; 
             btn.innerText = "CONFIRMAR";
         }
-   function borrarProducto(id, nombre) {
+  function borrarProducto(id, nombre) {
             mostrarConfirmacion(`¿Borrar el producto "${nombre}" y todo su historial?`, async () => {
                 try {
-                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Limpiando a fondo...</p></div>';
+                    document.getElementById('lista-prods').innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-red-500 mb-2"></i><p class="text-slate-400 font-bold">Borrando producto...</p></div>';
 
-                    // 1. Traemos todo el historial de movimientos
-                    const movs = await callAppSheet(API.mov, "Find");
-                    
-                    // 2. Buscamos TODOS los movimientos que tengan el código raro de este producto
-                    const movsDelProducto = movs.filter(m => m.PRODUCTO === id);
-                    
-                    // 3. Francotirador: Los borramos usando estrictamente la llave "ID_MOV"
-                    if (movsDelProducto.length > 0) {
-                        const payloadMovs = movsDelProducto.map(m => {
-                            return { "ID_MOV": m.ID_MOV }; // <--- La clave estaba acá
-                        });
-                        // Esperamos a que termine de borrar los movimientos
-                        await callAppSheet(API.mov, "Delete", payloadMovs);
-                    }
-
-                    // 4. Una vez limpio el historial, borramos el producto maestro
-                    await callAppSheet(API.prod, "Delete", [{ "Row ID": id }]);
+                    // Le mandamos las dos llaves posibles para blindar el borrado
+                    await callAppSheet(API.prod, "Delete", [{ 
+                        "Row ID": id,
+                        "ID_PRODUCTO": id
+                    }]);
                     
                     mostrarAlerta("Producto y movimientos eliminados", "exito");
                     verProductos(); 
@@ -437,12 +425,11 @@ async function confirmarNuevoProducto() {
             const mInput = document.getElementById('new-prod-min');
             
             const n = nInput.value;
+            // Si el usuario lo deja en blanco, el código lo convierte a 0 internamente para no romper la base de datos
             const i = parseInt(iInput.value) || 0;
             const m = parseInt(mInput.value) || 0;
             
             if (!n) return mostrarAlerta("El nombre es obligatorio", "error");
-            
-            // ACA ESTA EL BLOQUEO: Frena si es menor a 0
             if (i < 0) return mostrarAlerta("El stock inicial no puede ser negativo", "error");
             if (m < 0) return mostrarAlerta("El stock mínimo no puede ser negativo", "error");
             
@@ -460,9 +447,10 @@ async function confirmarNuevoProducto() {
                 mostrarAlerta("Producto creado correctamente", "exito");
                 cerrarModal();
                 
+                // MAGIA UX: Dejamos las casillas en blanco para el próximo producto
                 nInput.value = '';
-                iInput.value = '0';
-                mInput.value = '5';
+                iInput.value = '';
+                mInput.value = '';
                 
                 if (!document.getElementById('productos-screen').classList.contains('hidden')) {
                     verProductos();
@@ -475,7 +463,6 @@ async function confirmarNuevoProducto() {
             btn.disabled = false; 
             btn.innerText = "CREAR";
         }
-
     </script>
 </body>
 </html>
