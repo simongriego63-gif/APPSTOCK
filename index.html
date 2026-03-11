@@ -193,6 +193,24 @@
             }
             return fechaStr;
         }
+        
+        async function enviarAlertaMail(nombreProd, stockActual, stockMin) {
+            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec';
+            try {
+                // Lo mandamos usando fetch, sin "await" para que no congele la pantalla del usuario
+                fetch(urlBackend, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "sendEmail",
+                        nombreProd: nombreProd,
+                        stockActual: stockActual,
+                        stockMin: stockMin
+                    })
+                });
+            } catch (e) {
+                console.log("Error silencioso al mandar mail:", e);
+            }
+        }
 
 
         // =========================================================================
@@ -328,20 +346,27 @@
 
         function procesarSelectCarga(prods, movs, sel) {
             window.stockGlobal = {}; 
-            prods.forEach(p => window.stockGlobal[getId(p)] = 0);
+            window.minGlobal = {}; // NUEVO: Guardamos en memoria el stock mínimo de cada producto
+            
+            prods.forEach(p => {
+                window.stockGlobal[getId(p)] = 0;
+                window.minGlobal[getId(p)] = parseInt(p["STOCK MINIMO"]) || 0;
+            });
+            
             movs.forEach(m => {
                 const cant = parseInt(m.CANTIDAD) || 0;
                 if (m.TIPO === 'Entrada') window.stockGlobal[m.PRODUCTO] += cant;
                 else window.stockGlobal[m.PRODUCTO] -= cant;
             });
+            
             sel.innerHTML = '<option value="">Seleccionar Producto...</option>' + prods.map(p => {
                 const idReal = getId(p);
                 const disp = window.stockGlobal[idReal] || 0;
                 return `<option value="${idReal}">${p.NOMBRE} (Disp: ${disp})</option>`;
             }).join('');
         }
-
-        async function guardarMov() {
+       
+async function guardarMov() {
             const btn = document.getElementById('btnSave');
             const cantInput = document.getElementById('inputCant');
             const cant = parseInt(cantInput.value);
@@ -378,8 +403,7 @@
                     "FECHA": fechaAppSheet
                 }]);
                 
-                mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
-                
+                // Actualizamos la memoria
                 if (tipoSel === 'Entrada') {
                     window.stockGlobal[idProd] += cant;
                 } else {
@@ -390,6 +414,19 @@
                 const nombreProd = opcion.text.split(' (Disp:')[0];
                 opcion.text = `${nombreProd} (Disp: ${window.stockGlobal[idProd]})`;
                 
+                // --- NUEVO: CHEQUEO DE STOCK MÍNIMO PARA MANDAR MAIL ---
+                const stockFinal = window.stockGlobal[idProd];
+                const stockMinimo = window.minGlobal[idProd];
+                
+                // Si es salida y perforó el piso, manda correo y cambia el texto de la alerta
+                if (tipoSel === 'Salida' && stockFinal <= stockMinimo) {
+                    enviarAlertaMail(nombreProd, stockFinal, stockMinimo);
+                    mostrarAlerta(`Movimiento guardado. ¡Ojo! Stock bajo de ${nombreProd}`, "info");
+                } else {
+                    mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
+                }
+                // --------------------------------------------------------
+
                 cantInput.value = ''; 
                 
             } catch (e) { 
@@ -399,8 +436,6 @@
             btn.disabled = false; 
             btn.innerText = "CONFIRMAR";
         }
-
-
         // =========================================================================
         // 7. MÓDULO: GESTIÓN DE PRODUCTOS E INVENTARIO
         // =========================================================================
