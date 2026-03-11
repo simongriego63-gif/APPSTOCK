@@ -66,7 +66,7 @@
         </div>
     </div>
 
-        <div id="productos-screen" class="hidden max-w-md mx-auto">
+    <div id="productos-screen" class="hidden max-w-md mx-auto">
         <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-black text-slate-800 tracking-tight">Inventario</h2>
@@ -96,7 +96,6 @@
 
         <div id="lista-hist" class="grid gap-3 mb-6"></div>
     </div>
-
 
     <div id="modal-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
         <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl">
@@ -132,11 +131,36 @@
             <div class="flex gap-3" id="alerta-botones"></div>
         </div>
     </div>
-<script>
+    <div id="modal-editar-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+        <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Editar Producto</h2>
+            <input type="hidden" id="edit-prod-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
+                    <input type="text" id="edit-prod-nombre" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Inicial</label>
+                    <input type="number" id="edit-prod-inicial" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Mínimo</label>
+                    <input type="number" id="edit-prod-min" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                </div>
+                <div class="flex gap-3 mt-4">
+                    <button onclick="cerrarModalEditar()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
+                    <button id="btnGuardarEdicion" onclick="guardarEdicionProducto()" class="flex-1 bg-blue-500 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-blue-600">GUARDAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-    
-        // --- CREDENCIALES ---
+    <script>
+        // =========================================================================
+        // 1. VARIABLES GLOBALES Y CREDENCIALES
+        // =========================================================================
+        
         const API = {
             id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2",
             key: "V2-SU8cK-s6uVM-8A6K8-gor0L-f0sTx-hSJ2F-FLhOW-dgmLx",
@@ -146,10 +170,54 @@
 
         let tipoSel = "Entrada";
         let confirmCallback = null;
+        let datosHistorial = [];
+        let mapaNombresHistorial = {};
+        let filtroHistorial = 'Todos';
+        let datosProductos = [];
+        let stockMapaProductos = {};
 
-    
 
-        // --- SISTEMA DE ALERTAS BONITAS ---
+        // =========================================================================
+        // 2. UTILIDADES GENERALES
+        // =========================================================================
+
+        function getId(fila) {
+            return fila["Row ID"] || fila.ID_PRODUCTO;
+        }
+
+        function fechaArg(fechaStr) {
+            if (!fechaStr) return '';
+            const partes = fechaStr.split(':');
+            if (partes.length === 3) {
+                return partes[0] + ':' + partes[1];
+            }
+            return fechaStr;
+        }
+
+
+        // =========================================================================
+        // 3. CONTROL DE INTERFAZ Y NAVEGACIÓN
+        // =========================================================================
+
+        function showPage(p) {
+            document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
+            document.getElementById(p + '-screen').classList.remove('hidden');
+        }
+
+        function setTipo(t) {
+            tipoSel = t;
+            document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-2xl active-entrada" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
+            document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
+        }
+
+        function nuevoProdPrompt() { document.getElementById('modal-producto').classList.remove('hidden'); }
+        function cerrarModal() { document.getElementById('modal-producto').classList.add('hidden'); }
+
+
+        // =========================================================================
+        // 4. SISTEMA DE ALERTAS Y CONFIRMACIONES
+        // =========================================================================
+
         function mostrarAlerta(mensaje, tipo = 'info') {
             document.getElementById('modal-alerta').classList.remove('hidden');
             document.getElementById('alerta-mensaje').innerText = mensaje;
@@ -192,33 +260,14 @@
         function ejecutarConfirmacion() { cerrarAlerta(); if (confirmCallback) confirmCallback(); }
 
 
-    
-        // --- NAVEGACIÓN ---
-        function showPage(p) {
-            document.querySelectorAll('div[id$="-screen"]').forEach(d => d.classList.add('hidden'));
-            document.getElementById(p + '-screen').classList.remove('hidden');
-        }
+        // =========================================================================
+        // 5. CONEXIÓN AL BACKEND Y MEMORIA LOCAL (CACHÉ)
+        // =========================================================================
 
-        function setTipo(t) {
-            tipoSel = t;
-            document.getElementById('btn-ent').className = t === 'Entrada' ? "btn-tipo p-4 rounded-2xl active-entrada" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
-            document.getElementById('btn-sal').className = t === 'Salida' ? "btn-tipo p-4 rounded-2xl active-salida" : "btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50";
-        }
-
-        function nuevoProdPrompt() { document.getElementById('modal-producto').classList.remove('hidden'); }
-        function cerrarModal() { document.getElementById('modal-producto').classList.add('hidden'); }
-
-
-
-
-    
-       // --- CONEXIÓN AL BACKEND (Optimizada para velocidad) ---
         async function callAppSheet(tableName, action, rows = []) {
-            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec'; // ¡Pega tu link acá!
+            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec';
             
             try {
-                // TRUCO DE VELOCIDAD: Al quitarle el 'headers: Content-Type', 
-                // evitamos que el navegador haga la lenta "doble verificación" de seguridad (CORS Preflight).
                 const response = await fetch(urlBackend, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -240,136 +289,6 @@
             }
         }
 
-    
-    
-    
-    // --- HERRAMIENTAS NUEVAS ---
-        function getId(fila) {
-            return fila["Row ID"] || fila.ID_PRODUCTO;
-        }
-
- 
-    
-    
-    // --- LÓGICA DE LA APP ---
-       // 1. EL TRADUCTOR DE FECHAS (Ahora respeta el Día/Mes/Año)
-        function fechaArg(fechaStr) {
-            if (!fechaStr) return '';
-            // Cortamos los segundos para que quede prolijo (ej: "08/03/2026 14:30")
-            const partes = fechaStr.split(':');
-            if (partes.length === 3) {
-                return partes[0] + ':' + partes[1];
-            }
-            return fechaStr;
-        }
-
-
-    
-       async function guardarMov() {
-            const btn = document.getElementById('btnSave');
-            const cantInput = document.getElementById('inputCant');
-            const cant = parseInt(cantInput.value);
-            const selProd = document.getElementById('selectProd');
-            const idProd = selProd.value; 
-
-            if (!idProd || idProd === "") return mostrarAlerta("Por favor, selecciona un producto válido.", "error");
-            if (!cant || cant <= 0) return mostrarAlerta("Ingresa una cantidad mayor a cero.", "error");
-
-            if (tipoSel === 'Salida') {
-                const stockDisponible = window.stockGlobal ? (window.stockGlobal[idProd] || 0) : 0;
-                if (cant > stockDisponible) {
-                    return mostrarAlerta(`No podés retirar ${cant}. Solo tenés ${stockDisponible} en stock.`, "error");
-                }
-            }
-
-            btn.disabled = true; 
-            btn.innerText = "GUARDANDO...";
-            
-            try {
-                const d = new Date();
-                const dia = String(d.getDate()).padStart(2, '0');
-                const mes = String(d.getMonth() + 1).padStart(2, '0');
-                const anio = d.getFullYear();
-                const horas = String(d.getHours()).padStart(2, '0');
-                const minutos = String(d.getMinutes()).padStart(2, '0');
-                const segundos = String(d.getSeconds()).padStart(2, '0');
-                const fechaAppSheet = `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
-
-                // 1. Mandamos el dato al servidor blindado
-                await callAppSheet(API.mov, "Add", [{
-                    "PRODUCTO": idProd, 
-                    "CANTIDAD": cant, 
-                    "TIPO": tipoSel, 
-                    "FECHA": fechaAppSheet
-                }]);
-                
-                mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
-                
-                // 2. MAGIA DE VELOCIDAD: En vez de descargar toda la base de datos de nuevo,
-                // sumamos o restamos el stock en la memoria de la pantalla al instante.
-                if (tipoSel === 'Entrada') {
-                    window.stockGlobal[idProd] += cant;
-                } else {
-                    window.stockGlobal[idProd] -= cant;
-                }
-                
-                // Actualizamos el textito del producto seleccionado en tiempo real
-                const opcion = selProd.options[selProd.selectedIndex];
-                const nombreProd = opcion.text.split(' (Disp:')[0];
-                opcion.text = `${nombreProd} (Disp: ${window.stockGlobal[idProd]})`;
-                
-                // Limpiamos la cajita de cantidad para que sigas trabajando rápido
-                cantInput.value = ''; 
-                
-            } catch (e) { 
-                mostrarAlerta(e.message, "error"); 
-            }
-            
-            btn.disabled = false; 
-            btn.innerText = "CONFIRMAR";
-        }
-
-    
-async function borrarProducto(id, nombre) {
-    mostrarConfirmacion(`¿Borrar "${nombre}" y todo su historial?`, async () => {
-        try {
-            // 1. Mostramos un aviso para que el usuario sepa que está cargando (puede demorar un segundito más)
-            mostrarAlerta(`Limpiando registros de ${nombre}...`, "info");
-
-            // 2. Traemos TODOS los movimientos
-            const todosLosMovs = await callAppSheet(API.mov, "Find");
-            
-            // 3. Filtramos solo los que pertenecen al producto que queremos borrar
-            const movsDelProducto = todosLosMovs
-                .filter(m => m.PRODUCTO === id)
-                .map(m => ({ "Row ID": m["Row ID"] || m._RowNumber })); // Capturamos el ID de cada movimiento
-
-            // 4. Si encontramos movimientos, mandamos la orden de borrarlos todos juntos
-            if (movsDelProducto.length > 0) {
-                await callAppSheet(API.mov, "Delete", movsDelProducto);
-            }
-
-            // 5. Ahora sí, con el historial limpio, borramos el producto matriz
-            await callAppSheet(API.prod, "Delete", [{ "Row ID": id }]);
-            
-            mostrarAlerta("Producto y movimientos eliminados", "exito");
-            verProductos(); // Refrescamos la lista
-            
-        } catch (e) {
-            mostrarAlerta("Error en la limpieza: " + e.message, "error");
-        }
-    });
-}
-
-// --- VARIABLES GLOBALES EN MEMORIA ---
-        let datosHistorial = [];
-        let mapaNombresHistorial = {};
-        let filtroHistorial = 'Todos';
-
-        let datosProductos = [];
-        let stockMapaProductos = {};
-
-        // --- HERRAMIENTAS DE MEMORIA LOCAL (Caché) ---
         async function syncDatos() {
             const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
             localStorage.setItem('stock_prods', JSON.stringify(prods));
@@ -383,7 +302,11 @@ async function borrarProducto(id, nombre) {
             return { prods, movs };
         }
 
-        // === LÓGICA DE MOVIMIENTOS (CARGA) ===
+
+        // =========================================================================
+        // 6. MÓDULO: REGISTRAR MOVIMIENTOS
+        // =========================================================================
+
         async function abrirCarga() {
             showPage('movimientos');
             const sel = document.getElementById('selectProd');
@@ -418,7 +341,70 @@ async function borrarProducto(id, nombre) {
             }).join('');
         }
 
-        // === LÓGICA DE PRODUCTOS Y BUSCADOR ===
+        async function guardarMov() {
+            const btn = document.getElementById('btnSave');
+            const cantInput = document.getElementById('inputCant');
+            const cant = parseInt(cantInput.value);
+            const selProd = document.getElementById('selectProd');
+            const idProd = selProd.value; 
+
+            if (!idProd || idProd === "") return mostrarAlerta("Por favor, selecciona un producto válido.", "error");
+            if (!cant || cant <= 0) return mostrarAlerta("Ingresa una cantidad mayor a cero.", "error");
+
+            if (tipoSel === 'Salida') {
+                const stockDisponible = window.stockGlobal ? (window.stockGlobal[idProd] || 0) : 0;
+                if (cant > stockDisponible) {
+                    return mostrarAlerta(`No podés retirar ${cant}. Solo tenés ${stockDisponible} en stock.`, "error");
+                }
+            }
+
+            btn.disabled = true; 
+            btn.innerText = "GUARDANDO...";
+            
+            try {
+                const d = new Date();
+                const dia = String(d.getDate()).padStart(2, '0');
+                const mes = String(d.getMonth() + 1).padStart(2, '0');
+                const anio = d.getFullYear();
+                const horas = String(d.getHours()).padStart(2, '0');
+                const minutos = String(d.getMinutes()).padStart(2, '0');
+                const segundos = String(d.getSeconds()).padStart(2, '0');
+                const fechaAppSheet = `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
+
+                await callAppSheet(API.mov, "Add", [{
+                    "PRODUCTO": idProd, 
+                    "CANTIDAD": cant, 
+                    "TIPO": tipoSel, 
+                    "FECHA": fechaAppSheet
+                }]);
+                
+                mostrarAlerta("¡Movimiento guardado exitosamente!", "exito"); 
+                
+                if (tipoSel === 'Entrada') {
+                    window.stockGlobal[idProd] += cant;
+                } else {
+                    window.stockGlobal[idProd] -= cant;
+                }
+                
+                const opcion = selProd.options[selProd.selectedIndex];
+                const nombreProd = opcion.text.split(' (Disp:')[0];
+                opcion.text = `${nombreProd} (Disp: ${window.stockGlobal[idProd]})`;
+                
+                cantInput.value = ''; 
+                
+            } catch (e) { 
+                mostrarAlerta(e.message, "error"); 
+            }
+            
+            btn.disabled = false; 
+            btn.innerText = "CONFIRMAR";
+        }
+
+
+        // =========================================================================
+        // 7. MÓDULO: GESTIÓN DE PRODUCTOS E INVENTARIO
+        // =========================================================================
+
         async function verProductos() {
             showPage('productos');
             const cont = document.getElementById('lista-prods');
@@ -467,6 +453,7 @@ async function borrarProducto(id, nombre) {
                 const idReal = getId(p);
                 const stock = stockMapaProductos[idReal] || 0;
                 const min = parseInt(p["STOCK MINIMO"]) || 0;
+                const inicial = parseInt(p["STOCK INICIAL"]) || 0;
                 const bajo = stock <= min;
                 return `
                 <div class="bg-white p-5 rounded-2xl border ${bajo ? 'border-red-200 bg-red-50' : 'border-slate-100'} shadow-sm flex justify-between items-center">
@@ -474,12 +461,125 @@ async function borrarProducto(id, nombre) {
                         <p class="font-bold text-slate-700">${p.NOMBRE}</p>
                         <p class="text-[10px] text-slate-400 font-bold uppercase">Stock: ${stock} | Mín: ${min}</p>
                     </div>
-                    <button onclick="borrarProducto('${idReal}', '${p.NOMBRE}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-trash-can text-sm"></i></button>
+                    <div class="flex gap-2">
+                        <button onclick="abrirModalEditar('${idReal}', '${p.NOMBRE}', ${inicial}, ${min})" class="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-pen text-sm"></i></button>
+                        <button onclick="borrarProducto('${idReal}', '${p.NOMBRE}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-trash-can text-sm"></i></button>
+                    </div>
                 </div>`;
             }).join('');
         }
 
-        // === LÓGICA DE HISTORIAL (TOP 20) ===
+        function abrirModalEditar(id, nombre, inicial, min) {
+            document.getElementById('edit-prod-id').value = id;
+            document.getElementById('edit-prod-nombre').value = nombre;
+            document.getElementById('edit-prod-inicial').value = inicial;
+            document.getElementById('edit-prod-min').value = min;
+            document.getElementById('modal-editar-producto').classList.remove('hidden');
+        }
+
+        function cerrarModalEditar() { document.getElementById('modal-editar-producto').classList.add('hidden'); }
+
+        async function guardarEdicionProducto() {
+            const id = document.getElementById('edit-prod-id').value;
+            const n = document.getElementById('edit-prod-nombre').value;
+            const i = parseInt(document.getElementById('edit-prod-inicial').value) || 0;
+            const m = parseInt(document.getElementById('edit-prod-min').value) || 0;
+            
+            if (!n) return mostrarAlerta("El nombre es obligatorio", "error");
+            
+            const btn = document.getElementById('btnGuardarEdicion');
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
+            
+            try {
+                // Mandamos la orden "Edit" con el ID exacto
+                await callAppSheet(API.prod, "Edit", [{ 
+                    "Row ID": id,
+                    "NOMBRE": n, 
+                    "STOCK MINIMO": m,
+                    "STOCK INICIAL": i
+                }]);
+                mostrarAlerta("Producto actualizado", "exito");
+                cerrarModalEditar();
+                verProductos(); // Recarga la lista para mostrar los cambios
+            } catch (e) { mostrarAlerta(e.message, "error"); }
+            
+            btn.disabled = false; btn.innerText = "GUARDAR";
+        }
+
+        async function confirmarNuevoProducto() {
+            const nInput = document.getElementById('new-prod-nombre');
+            const iInput = document.getElementById('new-prod-inicial');
+            const mInput = document.getElementById('new-prod-min');
+            
+            const n = nInput.value;
+            const i = parseInt(iInput.value) || 0;
+            const m = parseInt(mInput.value) || 0;
+            
+            if (!n) return mostrarAlerta("El nombre es obligatorio", "error");
+            if (i < 0) return mostrarAlerta("El stock inicial no puede ser negativo", "error");
+            if (m < 0) return mostrarAlerta("El stock mínimo no puede ser negativo", "error");
+            
+            const btn = document.getElementById('btnCrear');
+            btn.disabled = true; 
+            btn.innerText = "CREANDO...";
+            
+            try {
+                await callAppSheet(API.prod, "Add", [{ 
+                    "NOMBRE": n, 
+                    "STOCK MINIMO": m,
+                    "STOCK INICIAL": i
+                }]);
+                
+                mostrarAlerta("Producto creado correctamente", "exito");
+                cerrarModal();
+                
+                nInput.value = '';
+                iInput.value = '';
+                mInput.value = '';
+                
+                if (!document.getElementById('productos-screen').classList.contains('hidden')) {
+                    verProductos();
+                }
+                
+            } catch (e) { 
+                mostrarAlerta(e.message, "error"); 
+            }
+            
+            btn.disabled = false; 
+            btn.innerText = "CREAR";
+        }
+
+        async function borrarProducto(id, nombre) {
+            mostrarConfirmacion(`¿Borrar "${nombre}" y todo su historial?`, async () => {
+                try {
+                    mostrarAlerta(`Limpiando registros de ${nombre}...`, "info");
+
+                    const todosLosMovs = await callAppSheet(API.mov, "Find");
+                    
+                    const movsDelProducto = todosLosMovs
+                        .filter(m => m.PRODUCTO === id)
+                        .map(m => ({ "Row ID": m["Row ID"] || m._RowNumber })); 
+
+                    if (movsDelProducto.length > 0) {
+                        await callAppSheet(API.mov, "Delete", movsDelProducto);
+                    }
+
+                    await callAppSheet(API.prod, "Delete", [{ "Row ID": id }]);
+                    
+                    mostrarAlerta("Producto y movimientos eliminados", "exito");
+                    verProductos(); 
+                    
+                } catch (e) {
+                    mostrarAlerta("Error en la limpieza: " + e.message, "error");
+                }
+            });
+        }
+
+
+        // =========================================================================
+        // 8. MÓDULO: HISTORIAL DE MOVIMIENTOS
+        // =========================================================================
+
         async function verHistorial() {
             showPage('historial');
             const cont = document.getElementById('lista-hist');
@@ -543,64 +643,42 @@ async function borrarProducto(id, nombre) {
 
             const paraMostrar = filtrados.slice(0, 20);
 
-            cont.innerHTML = paraMostrar.map(m => {
+            // Agregamos el index para saber si es uno de los primeros 3
+            cont.innerHTML = paraMostrar.map((m, index) => {
                 const nombreFinal = mapaNombresHistorial[m.PRODUCTO] || m.PRODUCTO || 'Producto Eliminado';
+                const idMov = getId(m);
+                
+                // Magia: Solo mostramos la crucecita roja si el índice es menor a 3 (los últimos 3 movimientos)
+                const botonAnular = index < 3 ? `<button onclick="borrarMovimiento('${idMov}')" class="ml-4 text-slate-300 active:text-red-500 transition-colors"><i class="fas fa-times-circle"></i></button>` : '';
+
                 return `
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
                     <div>
                         <p class="font-black text-slate-800">${nombreFinal}</p>
                         <p class="text-[10px] text-slate-400 font-bold uppercase">${fechaArg(m.FECHA)}</p>
                     </div>
-                    <span class="font-black ${m.TIPO === 'Entrada' ? 'text-emerald-500' : 'text-red-500'} text-lg">${m.TIPO === 'Entrada' ? '+' : '-'}${m.CANTIDAD || 0}</span>
+                    <div class="flex items-center">
+                        <span class="font-black ${m.TIPO === 'Entrada' ? 'text-emerald-500' : 'text-red-500'} text-lg">${m.TIPO === 'Entrada' ? '+' : '-'}${m.CANTIDAD || 0}</span>
+                        ${botonAnular}
+                    </div>
                 </div>`
             }).join('');
         }
 
-
-async function confirmarNuevoProducto() {
-            const nInput = document.getElementById('new-prod-nombre');
-            const iInput = document.getElementById('new-prod-inicial');
-            const mInput = document.getElementById('new-prod-min');
-            
-            const n = nInput.value;
-            // Si el usuario lo deja en blanco, el código lo convierte a 0 internamente para no romper la base de datos
-            const i = parseInt(iInput.value) || 0;
-            const m = parseInt(mInput.value) || 0;
-            
-            if (!n) return mostrarAlerta("El nombre es obligatorio", "error");
-            if (i < 0) return mostrarAlerta("El stock inicial no puede ser negativo", "error");
-            if (m < 0) return mostrarAlerta("El stock mínimo no puede ser negativo", "error");
-            
-            const btn = document.getElementById('btnCrear');
-            btn.disabled = true; 
-            btn.innerText = "CREANDO...";
-            
-            try {
-                await callAppSheet(API.prod, "Add", [{ 
-                    "NOMBRE": n, 
-                    "STOCK MINIMO": m,
-                    "STOCK INICIAL": i
-                }]);
-                
-                mostrarAlerta("Producto creado correctamente", "exito");
-                cerrarModal();
-                
-                // MAGIA UX: Dejamos las casillas en blanco para el próximo producto
-                nInput.value = '';
-                iInput.value = '';
-                mInput.value = '';
-                
-                if (!document.getElementById('productos-screen').classList.contains('hidden')) {
-                    verProductos();
+        async function borrarMovimiento(idMov) {
+            mostrarConfirmacion("¿Anular este movimiento? Se ajustará el stock.", async () => {
+                try {
+                    mostrarAlerta("Anulando...", "info");
+                    // Mandamos la orden "Delete" directa al registro de movimiento
+                    await callAppSheet(API.mov, "Delete", [{ "Row ID": idMov }]);
+                    mostrarAlerta("Movimiento anulado correctamente", "exito");
+                    verHistorial(); // Refrescamos todo
+                } catch (e) {
+                    mostrarAlerta("Error al anular: " + e.message, "error");
                 }
-                
-            } catch (e) { 
-                mostrarAlerta(e.message, "error"); 
-            }
-            
-            btn.disabled = false; 
-            btn.innerText = "CREAR";
+            });
         }
+
     </script>
 </body>
 </html>
