@@ -265,36 +265,6 @@
 
 
     
-        // 2. LA CARGA INTERNA (Arrancamos el stock en 0 para no duplicar)
-        async function abrirCarga() {
-            showPage('movimientos');
-            const sel = document.getElementById('selectProd');
-            sel.innerHTML = '<option value="">Cargando base de datos...</option>';
-            try {
-                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
-                
-                window.stockGlobal = {}; 
-                // MAGIA: Arrancamos en 0. Los movimientos sumarán el stock inicial real.
-                prods.forEach(p => window.stockGlobal[getId(p)] = 0);
-                
-                movs.forEach(m => {
-                    const cant = parseInt(m.CANTIDAD) || 0;
-                    if (m.TIPO === 'Entrada') window.stockGlobal[m.PRODUCTO] += cant;
-                    else window.stockGlobal[m.PRODUCTO] -= cant;
-                });
-
-                sel.innerHTML = '<option value="">Seleccionar Producto...</option>' + prods.map(p => {
-                    const idReal = getId(p);
-                    const disp = window.stockGlobal[idReal] || 0;
-                    return `<option value="${idReal}">${p.NOMBRE} (Disp: ${disp})</option>`;
-                }).join('');
-                
-            } catch (e) { 
-                sel.innerHTML = '<option value="">Error de servidor</option>';
-                mostrarAlerta(e.message, "error"); 
-            }
-        }
-
        async function guardarMov() {
             const btn = document.getElementById('btnSave');
             const cantInput = document.getElementById('inputCant');
@@ -391,50 +361,95 @@ async function borrarProducto(id, nombre) {
     });
 }
 
-
-        // --- VARIABLES GLOBALES EN MEMORIA ---
-
-    
+// --- VARIABLES GLOBALES EN MEMORIA ---
         let datosHistorial = [];
         let mapaNombresHistorial = {};
         let filtroHistorial = 'Todos';
-        
+
         let datosProductos = [];
         let stockMapaProductos = {};
 
-    
-    
-    
-    // === LÓGICA DE PRODUCTOS Y BUSCADOR ===
-    
+        // --- HERRAMIENTAS DE MEMORIA LOCAL (Caché) ---
+        async function syncDatos() {
+            const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
+            localStorage.setItem('stock_prods', JSON.stringify(prods));
+            localStorage.setItem('stock_movs', JSON.stringify(movs));
+            return { prods, movs };
+        }
+
+        function getDatosLocales() {
+            const prods = JSON.parse(localStorage.getItem('stock_prods') || '[]');
+            const movs = JSON.parse(localStorage.getItem('stock_movs') || '[]');
+            return { prods, movs };
+        }
+
+        // === LÓGICA DE MOVIMIENTOS (CARGA) ===
+        async function abrirCarga() {
+            showPage('movimientos');
+            const sel = document.getElementById('selectProd');
+            
+            const locales = getDatosLocales();
+            if (locales.prods.length > 0) procesarSelectCarga(locales.prods, locales.movs, sel);
+            else sel.innerHTML = '<option value="">Cargando base de datos...</option>';
+
+            try {
+                const frescos = await syncDatos();
+                procesarSelectCarga(frescos.prods, frescos.movs, sel);
+            } catch (e) {
+                if (locales.prods.length === 0) {
+                    sel.innerHTML = '<option value="">Error de servidor</option>';
+                    mostrarAlerta(e.message, "error"); 
+                }
+            }
+        }
+
+        function procesarSelectCarga(prods, movs, sel) {
+            window.stockGlobal = {}; 
+            prods.forEach(p => window.stockGlobal[getId(p)] = 0);
+            movs.forEach(m => {
+                const cant = parseInt(m.CANTIDAD) || 0;
+                if (m.TIPO === 'Entrada') window.stockGlobal[m.PRODUCTO] += cant;
+                else window.stockGlobal[m.PRODUCTO] -= cant;
+            });
+            sel.innerHTML = '<option value="">Seleccionar Producto...</option>' + prods.map(p => {
+                const idReal = getId(p);
+                const disp = window.stockGlobal[idReal] || 0;
+                return `<option value="${idReal}">${p.NOMBRE} (Disp: ${disp})</option>`;
+            }).join('');
+        }
+
+        // === LÓGICA DE PRODUCTOS Y BUSCADOR ===
         async function verProductos() {
             showPage('productos');
             const cont = document.getElementById('lista-prods');
-            document.getElementById('buscador-productos').value = ''; // Limpiamos buscador
+            document.getElementById('buscador-productos').value = ''; 
             
-            cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i><p class="text-slate-400 italic">Sincronizando...</p></div>';
+            const locales = getDatosLocales();
+            if (locales.prods.length > 0) procesarYRenderizarProductos(locales.prods, locales.movs);
+            else cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i><p class="text-slate-400 italic">Sincronizando por primera vez...</p></div>';
+
             try {
-                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
-                
-                stockMapaProductos = {};
-                
-                // CORRECCIÓN: Arrancamos en 0 para que los movimientos calculen el total real y no se duplique
-                prods.forEach(p => stockMapaProductos[getId(p)] = 0);
-                
-                movs.forEach(m => {
-                    const cant = parseInt(m.CANTIDAD) || 0;
-                    if (m.TIPO === 'Entrada') stockMapaProductos[m.PRODUCTO] += cant;
-                    else stockMapaProductos[m.PRODUCTO] -= cant;
-                });
-                
-                datosProductos = prods; // Guardamos en RAM
-                renderizarProductos(datosProductos);
+                const frescos = await syncDatos();
+                procesarYRenderizarProductos(frescos.prods, frescos.movs);
             } catch (e) { 
-                cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Fallo de conexión.</p>';
-                mostrarAlerta(e.message, "error"); 
+                if (locales.prods.length === 0) {
+                    cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Fallo de conexión.</p>';
+                    mostrarAlerta(e.message, "error"); 
+                }
             }
         }
-       
+
+        function procesarYRenderizarProductos(prods, movs) {
+            stockMapaProductos = {};
+            prods.forEach(p => stockMapaProductos[getId(p)] = 0);
+            movs.forEach(m => {
+                const cant = parseInt(m.CANTIDAD) || 0;
+                if (m.TIPO === 'Entrada') stockMapaProductos[m.PRODUCTO] += cant;
+                else stockMapaProductos[m.PRODUCTO] -= cant;
+            });
+            datosProductos = prods; 
+            renderizarProductos(datosProductos);
+        }
 
         function filtrarProductos() {
             const texto = document.getElementById('buscador-productos').value.toLowerCase();
@@ -464,28 +479,33 @@ async function borrarProducto(id, nombre) {
             }).join('');
         }
 
-
-    
         // === LÓGICA DE HISTORIAL (TOP 20) ===
         async function verHistorial() {
             showPage('historial');
             const cont = document.getElementById('lista-hist');
-            cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-slate-800 mb-2"></i><p class="text-slate-400 italic">Cargando...</p></div>';
-            
             filtroHistorial = 'Todos';
             actualizarBotonesFiltro();
 
+            const locales = getDatosLocales();
+            if (locales.movs.length > 0) procesarYRenderizarHistorial(locales.prods, locales.movs);
+            else cont.innerHTML = '<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-slate-800 mb-2"></i><p class="text-slate-400 italic">Cargando...</p></div>';
+
             try {
-                const [prods, movs] = await Promise.all([callAppSheet(API.prod, "Find"), callAppSheet(API.mov, "Find")]);
-                mapaNombresHistorial = {};
-                prods.forEach(p => mapaNombresHistorial[getId(p)] = p.NOMBRE);
-                
-                datosHistorial = movs.reverse(); 
-                renderizarHistorial();
+                const frescos = await syncDatos();
+                procesarYRenderizarHistorial(frescos.prods, frescos.movs);
             } catch (e) { 
-                cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Error al cargar.</p>';
-                mostrarAlerta(e.message, "error");
+                if (locales.movs.length === 0) {
+                    cont.innerHTML = '<p class="text-center text-red-500 font-bold mt-10">Error al cargar.</p>';
+                    mostrarAlerta(e.message, "error");
+                }
             }
+        }
+
+        function procesarYRenderizarHistorial(prods, movs) {
+            mapaNombresHistorial = {};
+            prods.forEach(p => mapaNombresHistorial[getId(p)] = p.NOMBRE);
+            datosHistorial = movs.reverse(); 
+            renderizarHistorial();
         }
 
         function filtrarHistorial(tipo) {
@@ -521,7 +541,6 @@ async function borrarProducto(id, nombre) {
                 return;
             }
 
-            // ACÁ ESTÁ EL LÍMITE: Cortamos siempre en 20
             const paraMostrar = filtrados.slice(0, 20);
 
             cont.innerHTML = paraMostrar.map(m => {
