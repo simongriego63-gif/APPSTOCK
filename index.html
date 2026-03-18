@@ -3,95 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Sistema de Stock </title>
+    <title> Sistema de Stock - Café </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f3f7f9; font-family: 'Inter', sans-serif; }
-        .card-action { background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); transition: all 0.2s; cursor: pointer; border: 1px solid #f1f5f9; }
-        .card-action:active { transform: scale(0.97); background: #f8fafc; }
+        /* Diseño temático, misma lógica */
+        body { background-color: #FAF6F3; font-family: 'Inter', sans-serif; }
+        .card-action { background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(74, 48, 34, 0.05); transition: all 0.2s; cursor: pointer; border: 1px solid #F5EBE6; }
+        .card-action:active { transform: scale(0.97); background: #FDFBF9; }
         .hidden { display: none !important; }
-        .btn-tipo { border: 2px solid #e2e8f0; transition: all 0.2s; width: 100%; font-weight: 800; }
+        .btn-tipo { border: 2px solid #E6D5C9; transition: all 0.2s; width: 100%; font-weight: 800; }
         .active-entrada { border-color: #10b981; background-color: #ecfdf5; color: #059669; }
         .active-salida { border-color: #ef4444; background-color: #fef2f2; color: #dc2626; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #0f172a; color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 40; box-shadow: 0 10px 20px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #4A3022; color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 40; box-shadow: 0 10px 20px rgba(74, 48, 34, 0.3); cursor: pointer; transition: transform 0.2s; }
         .fab:active { transform: scale(0.90); }
     </style>
 </head>
-<body class="p-6">
+<body class="p-6 relative">
 
-    <div id="home-screen" class="max-w-md mx-auto">
-        <header class="mb-10 mt-4">
-            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Stock App</h1>
-            <p class="text-slate-400 font-medium">Gestión de Inventario</p>
+    <div class="fixed top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-amber-100 opacity-50 blur-3xl pointer-events-none"></div>
+
+    <div id="home-screen" class="max-w-md mx-auto relative z-10">
+        <header class="mb-10 mt-4 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-[#4A3022] tracking-tight">
+                    <i class="fas fa-mug-hot text-amber-600 mr-2"></i>Café Stock
+                </h1>
+                <p class="text-amber-800/60 font-medium">Gestión de Inventario</p>
+            </div>
         </header>
         <div class="grid gap-4">
             <div onclick="abrirCarga()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-emerald-500">
                 <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-plus-minus"></i></div>
-                <div><h3 class="font-bold text-slate-700">Registrar Movimiento</h3><p class="text-xs text-slate-400">Entradas y salidas</p></div>
+                <div><h3 class="font-bold text-[#4A3022]">Registrar Movimiento</h3><p class="text-xs text-amber-800/50">Entradas y salidas</p></div>
             </div>
-            <div onclick="verProductos()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-blue-500">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-boxes-stacked"></i></div>
-                <div><h3 class="font-bold text-slate-700">Productos</h3><p class="text-xs text-slate-400">Ver y administrar ítems</p></div>
+            <div onclick="verProductos()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-amber-500">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-box-open"></i></div>
+                <div><h3 class="font-bold text-[#4A3022]">Productos</h3><p class="text-xs text-amber-800/50">Ver y administrar ítems</p></div>
             </div>
-            <div onclick="verHistorial()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-slate-800">
-                <div class="w-12 h-12 bg-slate-50 text-slate-800 rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-history"></i></div>
-                <div><h3 class="font-bold text-slate-700">Historial</h3><p class="text-xs text-slate-400">Últimos registros</p></div>
+            <div onclick="verHistorial()" class="card-action p-6 flex items-center gap-4 border-l-4 border-l-[#4A3022]">
+                <div class="w-12 h-12 bg-[#F5EBE6] text-[#4A3022] rounded-2xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-history"></i></div>
+                <div><h3 class="font-bold text-[#4A3022]">Historial</h3><p class="text-xs text-amber-800/50">Últimos registros</p></div>
             </div>
         </div>
     </div>
 
-    <div id="movimientos-screen" class="hidden max-w-md mx-auto">
-        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
-        <div class="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
-            <h2 class="text-xl font-black text-slate-800 mb-6">Nuevo Registro</h2>
+    <div id="movimientos-screen" class="hidden max-w-md mx-auto relative z-10">
+        <button onclick="showPage('home')" class="mb-6 text-amber-800/60 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+        <div class="bg-white p-6 rounded-[32px] shadow-sm border border-[#F5EBE6]">
+            <h2 class="text-xl font-black text-[#4A3022] mb-6">Nuevo Registro</h2>
             <div class="space-y-6">
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Tipo</label>
                     <div class="grid grid-cols-2 gap-3 mt-2">
                         <button id="btn-ent" onclick="setTipo('Entrada')" class="btn-tipo p-4 rounded-2xl active-entrada">ENTRADA</button>
-                        <button id="btn-sal" onclick="setTipo('Salida')" class="btn-tipo p-4 rounded-2xl text-slate-400 bg-slate-50">SALIDA</button>
+                        <button id="btn-sal" onclick="setTipo('Salida')" class="btn-tipo p-4 rounded-2xl text-amber-800/40 bg-[#FAF6F3]">SALIDA</button>
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Producto</label>
-                    <select id="selectProd" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-2 border-none appearance-none"></select>
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Producto</label>
+                    <select id="selectProd" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-2 border-none appearance-none"></select>
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cantidad</label>
-                    <input type="number" id="inputCant" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-slate-700 mt-2 text-xl">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Cantidad</label>
+                    <input type="number" id="inputCant" placeholder="0" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-black text-[#4A3022] mt-2 text-xl">
                 </div>
-                <button onclick="guardarMov()" id="btnSave" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl active:bg-black transition-all">CONFIRMAR</button>
+                <button onclick="guardarMov()" id="btnSave" class="w-full bg-[#4A3022] text-white p-5 rounded-2xl font-bold shadow-xl active:bg-black transition-all">CONFIRMAR</button>
             </div>
         </div>
     </div>
 
-    <div id="productos-screen" class="hidden max-w-md mx-auto">
-        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+    <div id="productos-screen" class="hidden max-w-md mx-auto relative z-10">
+        <button onclick="showPage('home')" class="mb-6 text-amber-800/60 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-black text-slate-800 tracking-tight">Inventario</h2>
-            <button onclick="verProductos()" class="text-blue-500 text-xs font-bold active:text-blue-700"><i class="fas fa-sync"></i> ACTUALIZAR</button>
+            <h2 class="text-xl font-black text-[#4A3022] tracking-tight">Inventario</h2>
+            <button onclick="verProductos()" class="text-amber-600 text-xs font-bold active:text-amber-800"><i class="fas fa-sync"></i> ACTUALIZAR</button>
         </div>
         
         <div class="mb-6 relative">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-amber-800/40">
                 <i class="fas fa-search"></i>
             </div>
-            <input type="text" id="buscador-productos" onkeyup="filtrarProductos()" placeholder="Buscar producto..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl outline-none font-bold text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm">
+            <input type="text" id="buscador-productos" onkeyup="filtrarProductos()" placeholder="Buscar producto..." class="w-full pl-11 pr-4 py-4 bg-white border border-[#E6D5C9] rounded-2xl outline-none font-bold text-[#4A3022] focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all shadow-sm">
         </div>
 
         <div id="lista-prods" class="grid gap-3 mb-24"></div>
+        
         <div onclick="nuevoProdPrompt()" class="fab shadow-xl"><i class="fas fa-plus"></i></div>
     </div>
 
-    <div id="historial-screen" class="hidden max-w-md mx-auto">
-        <button onclick="showPage('home')" class="mb-6 text-slate-400 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
-        <h2 class="text-xl font-black text-slate-800 mb-4 tracking-tight">Historial</h2>
+    <div id="historial-screen" class="hidden max-w-md mx-auto relative z-10">
+        <button onclick="showPage('home')" class="mb-6 text-amber-800/60 font-bold flex items-center gap-2"><i class="fas fa-chevron-left"></i> VOLVER</button>
+        <h2 class="text-xl font-black text-[#4A3022] mb-4 tracking-tight">Historial</h2>
         
-        <div class="flex gap-2 mb-6 bg-slate-200/50 p-1 rounded-2xl">
-            <button id="filtro-todos" onclick="filtrarHistorial('Todos')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-slate-800 transition-all">TODOS</button>
-            <button id="filtro-entradas" onclick="filtrarHistorial('Entrada')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all">ENTRADAS</button>
-            <button id="filtro-salidas" onclick="filtrarHistorial('Salida')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all">SALIDAS</button>
+        <div class="flex gap-2 mb-6 bg-[#E6D5C9]/50 p-1 rounded-2xl">
+            <button id="filtro-todos" onclick="filtrarHistorial('Todos')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-[#4A3022] transition-all">TODOS</button>
+            <button id="filtro-entradas" onclick="filtrarHistorial('Entrada')" class="flex-1 py-2 text-xs font-bold rounded-xl text-amber-800/60 hover:text-[#4A3022] transition-all">ENTRADAS</button>
+            <button id="filtro-salidas" onclick="filtrarHistorial('Salida')" class="flex-1 py-2 text-xs font-bold rounded-xl text-amber-800/60 hover:text-[#4A3022] transition-all">SALIDAS</button>
         </div>
 
         <div id="lista-hist" class="grid gap-3 mb-6"></div>
@@ -99,23 +107,23 @@
 
     <div id="modal-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
         <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl">
-            <h2 class="text-2xl font-black text-slate-800 mb-6">Nuevo Producto</h2>
+            <h2 class="text-2xl font-black text-[#4A3022] mb-6">Nuevo Producto</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
-                    <input type="text" id="new-prod-nombre" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Nombre</label>
+                    <input type="text" id="new-prod-nombre" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Inicial</label>
-                    <input type="number" id="new-prod-inicial" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Stock Inicial</label>
+                    <input type="number" id="new-prod-inicial" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Mínimo</label>
-                    <input type="number" id="new-prod-min" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Stock Mínimo</label>
+                    <input type="number" id="new-prod-min" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div class="flex gap-3 mt-4">
-                    <button onclick="cerrarModal()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
-                    <button id="btnCrear" onclick="confirmarNuevoProducto()" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-black">CREAR</button>
+                    <button onclick="cerrarModal()" class="flex-1 p-4 text-amber-800/50 font-bold active:text-[#4A3022]">CANCELAR</button>
+                    <button id="btnCrear" onclick="confirmarNuevoProducto()" class="flex-1 bg-[#4A3022] text-white p-4 rounded-2xl font-bold shadow-lg active:bg-black">CREAR</button>
                 </div>
             </div>
         </div>
@@ -123,47 +131,48 @@
 
     <div id="modal-alerta" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-[60]">
         <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl text-center">
-            <div id="alerta-icono" class="w-16 h-16 mx-auto bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4">
+            <div id="alerta-icono" class="w-16 h-16 mx-auto bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-3xl mb-4">
                 <i class="fas fa-info-circle"></i>
             </div>
-            <h2 id="alerta-titulo" class="text-xl font-black text-slate-800 mb-2">Aviso</h2>
-            <p id="alerta-mensaje" class="text-slate-500 font-medium mb-6 text-sm break-words">Mensaje</p>
+            <h2 id="alerta-titulo" class="text-xl font-black text-[#4A3022] mb-2">Aviso</h2>
+            <p id="alerta-mensaje" class="text-amber-800/70 font-medium mb-6 text-sm break-words">Mensaje</p>
             <div class="flex gap-3" id="alerta-botones"></div>
         </div>
     </div>
+
     <div id="modal-editar-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
         <div class="bg-white w-full max-w-xs rounded-[32px] p-8 shadow-2xl">
-            <h2 class="text-2xl font-black text-slate-800 mb-6">Editar Producto</h2>
+            <h2 class="text-2xl font-black text-[#4A3022] mb-6">Editar Producto</h2>
             <input type="hidden" id="edit-prod-id">
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
-                    <input type="text" id="edit-prod-nombre" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Nombre</label>
+                    <input type="text" id="edit-prod-nombre" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Inicial</label>
-                    <input type="number" id="edit-prod-inicial" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Stock Inicial</label>
+                    <input type="number" id="edit-prod-inicial" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock Mínimo</label>
-                    <input type="number" id="edit-prod-min" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700 mt-1">
+                    <label class="text-[10px] font-black text-amber-800/50 uppercase tracking-widest ml-1">Stock Mínimo</label>
+                    <input type="number" id="edit-prod-min" class="w-full p-4 bg-[#FAF6F3] rounded-2xl outline-none font-bold text-[#4A3022] mt-1">
                 </div>
                 <div class="flex gap-3 mt-4">
-                    <button onclick="cerrarModalEditar()" class="flex-1 p-4 text-slate-400 font-bold active:text-slate-600">CANCELAR</button>
-                    <button id="btnGuardarEdicion" onclick="guardarEdicionProducto()" class="flex-1 bg-blue-500 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-blue-600">GUARDAR</button>
+                    <button onclick="cerrarModalEditar()" class="flex-1 p-4 text-amber-800/50 font-bold active:text-[#4A3022]">CANCELAR</button>
+                    <button id="btnGuardarEdicion" onclick="guardarEdicionProducto()" class="flex-1 bg-amber-600 text-white p-4 rounded-2xl font-bold shadow-lg active:bg-amber-700">GUARDAR</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <script>
+        
+<script>
         // =========================================================================
         // 1. VARIABLES GLOBALES Y CREDENCIALES
         // =========================================================================
         
         const API = {
-            id: "927a8f4f-34af-4e0e-8e19-4b304e84b1d2",
-            key: "V2-pc8Ch-K1cGL-wxmqb-xncfX-sAbc0-I077N-lyVVS-mqnwe",
+            id: "eccd6dcd-769e-465d-aac1-81b6cf4e1bf0",
+            key: "V2-ncGxY-Tz1pA-SzIKH-0x7m7-2y7Dz-BNFFo-saWvV-Oslab",
             mov: "MOVIMIENTOS",
             prod: "PRODUCTOS"
         };
@@ -195,7 +204,7 @@
         }
         
         async function enviarAlertaMail(nombreProd, stockActual, stockMin) {
-            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec';
+            const urlBackend = 'https://script.google.com/macros/s/AKfycbxG59-4DUS22Wo4ArcE-1rsepGvz2RyOHYmGoiaEJ2cf32PJ8Es2svXNLnZ86a6vmcxjQ/exec';
             try {
                 // Lo mandamos usando fetch, sin "await" para que no congele la pantalla del usuario
                 fetch(urlBackend, {
@@ -283,7 +292,7 @@
         // =========================================================================
 
         async function callAppSheet(tableName, action, rows = []) {
-            const urlBackend = 'https://script.google.com/macros/s/AKfycby36usYgw2JuaQaeI2JOqHqPGuygPK67CJmX4M_1hWdIEQo35dMZcfqRp7ONUqbjBdhlw/exec';
+            const urlBackend = 'https://script.google.com/macros/s/AKfycbxG59-4DUS22Wo4ArcE-1rsepGvz2RyOHYmGoiaEJ2cf32PJ8Es2svXNLnZ86a6vmcxjQ/exec';
             
             try {
                 const response = await fetch(urlBackend, {
